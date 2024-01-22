@@ -11,12 +11,12 @@ def _auth_header(access_token):
 
 def validate_access_token_and_get_merchant_code(access_token):
     if not access_token:
-        raise ValidationError(_("No access token given."))
+        raise ValidationError(_("No API Key given."))
 
     response = requests.get(f"{SUMUP_BASE_URL}/me", headers=_auth_header(access_token))
 
     if response.status_code == 401:
-        raise ValidationError(_("The access token is invalid."))
+        raise ValidationError(_("The API Key is invalid."))
 
     # Forward other errors
     response.raise_for_status()
@@ -41,7 +41,7 @@ def create_checkout(
     )
 
     if response.status_code == 401:
-        raise ValidationError(_("The access token is invalid."))
+        raise ValidationError(_("The API Key is invalid."))
 
     # Forward other errors
     response.raise_for_status()
@@ -56,7 +56,7 @@ def get_checkout(checkout_id, access_token):
     )
 
     if response.status_code == 401:
-        raise ValidationError(_("The access token is invalid."))
+        raise ValidationError(_("The API Key is invalid."))
 
     # Forward other errors
     response.raise_for_status()
@@ -71,7 +71,7 @@ def cancel_checkout(checkout_id, access_token):
     )
 
     if response.status_code == 401:
-        raise ValidationError(_("The access token is invalid."))
+        raise ValidationError(_("The API Key is invalid."))
 
     # Forward other errors
     response.raise_for_status()
@@ -85,7 +85,7 @@ def get_transaction_by_code(transaction_code, access_token):
     )
 
     if response.status_code == 401:
-        raise ValidationError(_("The access token is invalid."))
+        raise ValidationError(_("The API Key is invalid."))
 
     # Forward other errors
     response.raise_for_status()
@@ -102,7 +102,7 @@ def refund_transaction(transaction_id, access_token, amount=None):
     )
 
     if response.status_code == 401:
-        raise ValidationError(_("The access token is invalid."))
+        raise ValidationError(_("The API Key is invalid."))
 
     # Forward other errors
     response.raise_for_status()

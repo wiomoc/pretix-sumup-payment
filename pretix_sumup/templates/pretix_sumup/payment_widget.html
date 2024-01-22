@@ -1,3 +1,4 @@
+{% load i18n %}
 <html>
 <head>
     <style>
@@ -15,12 +16,12 @@
     window.top.location.reload()
 </script>
 <body>
-<div class="title">Processing Payment</div>
+<div class="title">{% trans "Processing Payment" %}</div>
 {% else %}
 <body>
 <div class="title">
     {% if retry %}
-    Last try rejected. Please retry.
+        {% trans "Last try rejected. Please check your entry and retry afterwards." %}
     {% endif %}
 </div>
 <div id="sumup-card"></div>
@@ -37,18 +38,18 @@
             console.log(type, body);
             const titleEl = document.querySelector('.title')
             if (type === 'sent') {
-                titleEl.innerHTML = 'Processing Payment';
+                titleEl.innerHTML = '{% trans "Processing Payment" %}';
             } else if (type === 'success') {
                 if (body.status === "FAILED") {
-                    titleEl.innerHTML = 'Last try rejected. Please retry';
+                    titleEl.innerHTML = '{% trans "Last try rejected. Please check your entry and retry afterwards." %}';
                 } else if (body.status === "PAID") {
-                    document.getElementById("sumup-card").innerHTML = '<div class="title">Payment successful</div>';
+                    document.getElementById("sumup-card").innerHTML = '<div class="title">{% trans "Payment successful" %}</div>';
                     window.location.reload()
                 } else {
                     window.location.reload()
                 }
             } else if (type === 'invalid') {
-                titleEl.innerHTML = 'Invalid card data. Please retry';
+                titleEl.innerHTML = '{% trans "Invalid card data. Please check your entry and retry afterwards." %}';
             }
         },
     });

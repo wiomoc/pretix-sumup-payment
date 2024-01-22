@@ -41,9 +41,11 @@ class SumUp(BasePaymentProvider):
                     SecretKeySettingsField(
                         label=_("API Key"),
                         required=True,
-                        help_text="API keys are authorization tokens that allow pretix to call SumUp on your behalf. "
-                        '<a href="https://developer.sumup.com/api-keys" target="_blank">Click here to '
-                        "manage API Keys in SumUp</a>",
+                        help_text=_(
+                            "API keys are authorization tokens that allow pretix to call SumUp on your behalf. "
+                            '<a href="https://developer.sumup.com/api-keys" target="_blank">Click here to '
+                            "manage API Keys in SumUp</a>"
+                        ),
                         validators=(StripeKeyValidator("sup_sk_"),),
                     ),
                 ),
@@ -54,7 +56,7 @@ class SumUp(BasePaymentProvider):
                             attrs={
                                 "maxlength": 10,
                                 "readonly": "readonly",
-                                "placeholder": "Automatically filled in",
+                                "placeholder": _("Automatically filled in"),
                             }
                         ),
                         label=_("Merchant Code"),
@@ -112,10 +114,12 @@ class SumUp(BasePaymentProvider):
         except Exception as err:
             payment.fail(info={"error": str(err)})
             logger.exception(f"Error while creating sumup checkout: {err}")
-            raise PaymentException("Error while creating sumup checkout")
+            raise PaymentException(_("Error while creating sumup checkout"))
 
     def checkout_confirm_render(self, request, **kwargs):
-        return "After confirmation you will be redirected to SumUp to complete the payment."
+        return _(
+            "After confirmation you will be redirected to SumUp to complete the payment."
+        )
 
     def payment_form_render(self, request, **kwargs):
         return self.checkout_confirm_render(request, **kwargs)
@@ -162,7 +166,7 @@ class SumUp(BasePaymentProvider):
             checkout = get_checkout(checkout_id, self.settings.get("access_token"))
         except Exception as err:
             logger.exception(f"Error while synchronizing sumup checkout: {err}")
-            raise PaymentException("Error while synchronizing sumup checkout")
+            raise PaymentException(_("Error while synchronizing sumup checkout"))
         if checkout["status"] == "PAID":
             if not payment.state == OrderPayment.PAYMENT_STATE_CONFIRMED:
                 transaction_codes = [
@@ -236,7 +240,7 @@ class SumUp(BasePaymentProvider):
             logger.exception(f"Error while refunding sumup transaction: {err}")
             refund.state = OrderRefund.REFUND_STATE_FAILED
             refund.save(update_fields=["state"])
-            raise PaymentException("Error while refunding sumup transaction")
+            raise PaymentException(_("Error while refunding sumup transaction"))
 
     def _get_transaction(self, payment):
         transaction_codes = payment.info_data.get("sumup_transaction_codes")
@@ -254,7 +258,7 @@ class SumUp(BasePaymentProvider):
         transaction = self._get_transaction(payment)
         if not transaction:
             return ""
-        return "Payed via SumUp\n {} **** **** **** {}\n Auth code: {}".format(
+        return _("Payed via SumUp\n{} **** **** **** {}\nAuth code: {}").format(
             transaction["card"]["type"],
             transaction["card"]["last_4_digits"],
             transaction["auth_code"],

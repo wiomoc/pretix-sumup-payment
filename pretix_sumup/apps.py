@@ -14,7 +14,7 @@ class PluginApp(PluginConfig):
     verbose_name = "Pretix SumUp Payment"
 
     class PretixPluginMeta:
-        name = gettext_lazy("SumUp")
+        name = "SumUp"
         author = "Christoph Walcher"
         description = gettext_lazy("Accept creditcard payments via SumUp")
         visible = True
