@@ -1,0 +1,5 @@
+recursive-include pretix_sumup/static *
+recursive-include pretix_sumup/templates *
+recursive-include pretix_sumup/locale *
+include LICENSE
+exclude .gitlab-ci.yml

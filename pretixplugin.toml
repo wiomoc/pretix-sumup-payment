@@ -1,0 +1,5 @@
+[plugin]
+package = "pretix-sumup-payment"
+modules = [ "pretix_sumup" ]
+marketplace_name = "sumup-payment"
+

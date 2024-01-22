@@ -1,0 +1,57 @@
+<html>
+<head>
+    <style>
+        .title {
+            font-family: "Open Sans", "OpenSans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 18px;
+            color: #222222;
+            width: 100%;
+            text-align: center;
+        }
+    </style>
+</head>
+{% if reload %}
+<script type="text/javascript">
+    window.top.location.reload()
+</script>
+<body>
+<div class="title">Processing Payment</div>
+{% else %}
+<body>
+<div class="title">
+    {% if retry %}
+    Last try rejected. Please retry.
+    {% endif %}
+</div>
+<div id="sumup-card"></div>
+</body>
+<script
+        type="text/javascript"
+        src="https://gateway.sumup.com/gateway/ecom/card/v2/sdk.js"
+></script>
+<script type="text/javascript">
+    SumUpCard.mount({
+        id: 'sumup-card',
+        checkoutId: '{{ checkout_id }}',
+        onResponse: function (type, body) {
+            console.log(type, body);
+            const titleEl = document.querySelector('.title')
+            if (type === 'sent') {
+                titleEl.innerHTML = 'Processing Payment';
+            } else if (type === 'success') {
+                if (body.status === "FAILED") {
+                    titleEl.innerHTML = 'Last try rejected. Please retry';
+                } else if (body.status === "PAID") {
+                    document.getElementById("sumup-card").innerHTML = '<div class="title">Payment successful</div>';
+                    window.location.reload()
+                } else {
+                    window.location.reload()
+                }
+            } else if (type === 'invalid') {
+                titleEl.innerHTML = 'Invalid card data. Please retry';
+            }
+        },
+    });
+</script>
+{% endif %}
+</html>
