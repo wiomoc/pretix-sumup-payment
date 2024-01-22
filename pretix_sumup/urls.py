@@ -9,7 +9,7 @@ event_patterns = [
         name="checkout_event",
     ),
     re_path(
-        r"^sumup/payment_widget/(?P<payment>[^/]+)$",
+        r"^order/(?P<order>[^/]+)/(?P<secret>[A-Za-z0-9]+)/sumup/payment_widget/(?P<payment>[^/]+)$",
         payment_widget,
         name="payment_widget",
     ),

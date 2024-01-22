@@ -9,6 +9,7 @@ from django.template.response import TemplateResponse
 from django.utils.safestring import SafeString
 from django.utils.translation import gettext_lazy as _
 from pretix.base.forms import SecretKeySettingsField
+from pretix.base.middleware import _render_csp
 from pretix.base.models import OrderPayment, OrderRefund
 from pretix.base.payment import BasePaymentProvider, PaymentException
 from pretix.multidomain.urlreverse import build_absolute_uri, eventreverse
@@ -132,7 +133,11 @@ class SumUp(BasePaymentProvider):
                 eventreverse(
                     payment.order.event,
                     "plugins:pretix_sumup:payment_widget",
-                    kwargs={"payment": payment.pk},
+                    kwargs={
+                        "payment": payment.pk,
+                        "order": payment.order.code,
+                        "secret": payment.order.secret,
+                    },
                 )
             )
         )
@@ -295,7 +300,11 @@ def checkout_event(request, *args, **kwargs):
 def payment_widget(request, *args, **kwargs):
     provider = SumUp(request.event)
     order_payment = get_object_or_404(
-        OrderPayment, pk=kwargs.get("payment"), order__event=request.event
+        OrderPayment,
+        pk=kwargs.get("payment"),
+        order__event=request.event,
+        order__code=kwargs.get("order"),
+        order__secret=kwargs.get("secret"),
     )
     # Synchronize the payment status as backup if the return webhook fails
     provider.synchronize_payment_status(order_payment)
@@ -303,15 +312,17 @@ def payment_widget(request, *args, **kwargs):
     if not checkout_id:
         raise ValidationError(_("No SumUp checkout ID found."))
 
-    csp_header = {
-        "Content-Security-Policy": "default-src *.sumup.com; "
-        "script-src 'unsafe-inline' *.sumup.com; "
-        "style-src 'unsafe-inline', *.sumup.com; "
-        "frame-src *; "
-        "img-src *.sumup.com; "
-        "connect-src *.sumup.com; "
-        "frame-ancestors 'self'"
+    csp = {
+        "default-src": ["*.sumup.com"],
+        "script-src": ["'unsafe-inline'", "*.sumup.com"],
+        "style-src": ["'unsafe-inline'", "*.sumup.com"],
+        # sumup may due to 3DS verification load a site from the bank of the customer
+        "frame-src": ["*"],
+        "img-src": ["*.sumup.com"],
+        "connect-src": ["*.sumup.com"],
+        "frame-ancestors": ["'self'"],
     }
+    csp_header = {"Content-Security-Policy": _render_csp(csp)}
     if (
         order_payment.state == OrderPayment.PAYMENT_STATE_PENDING
         or order_payment.state == OrderPayment.PAYMENT_STATE_FAILED
