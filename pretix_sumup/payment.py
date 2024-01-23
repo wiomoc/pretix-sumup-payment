@@ -9,7 +9,7 @@ from django.template.response import TemplateResponse
 from django.utils.safestring import SafeString
 from django.utils.translation import gettext_lazy as _
 from pretix.base.forms import SecretKeySettingsField
-from pretix.base.middleware import _render_csp
+from pretix.base.middleware import _render_csp, get_language_from_request
 from pretix.base.models import OrderPayment, OrderRefund
 from pretix.base.payment import BasePaymentProvider, PaymentException
 from pretix.multidomain.urlreverse import build_absolute_uri, eventreverse
@@ -333,7 +333,9 @@ def payment_widget(request, *args, **kwargs):
     ):
         context = {
             "checkout_id": checkout_id,
+            "email": order_payment.order.email,
             "retry": order_payment.state == OrderPayment.PAYMENT_STATE_FAILED,
+            "locale": _get_sumup_locale(request),
         }
     elif order_payment.state == OrderPayment.PAYMENT_STATE_CONFIRMED:
         # The payment was paid in the meantime, reload the containing page to show the success message
@@ -346,3 +348,12 @@ def payment_widget(request, *args, **kwargs):
         request=request,
         headers=csp_header,
     )
+
+
+def _get_sumup_locale(request):
+    language = get_language_from_request(request)
+    if language == "de" or language == "de-informal":
+        return "de-DE"
+    elif language == "fr":
+        return "fr-FR"
+    return "en-GB"

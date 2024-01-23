@@ -33,7 +33,9 @@
 <script type="text/javascript">
     SumUpCard.mount({
         id: 'sumup-card',
+        locale: '{{ locale }}',
         checkoutId: '{{ checkout_id }}',
+        email: '{{ email }}',
         onResponse: function (type, body) {
             console.log(type, body);
             const titleEl = document.querySelector('.title')
