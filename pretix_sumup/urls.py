@@ -1,6 +1,6 @@
 from django.urls import re_path
 
-from pretix_sumup.payment import checkout_event, payment_widget
+from pretix_sumup.views import checkout_event, payment_widget
 
 event_patterns = [
     re_path(

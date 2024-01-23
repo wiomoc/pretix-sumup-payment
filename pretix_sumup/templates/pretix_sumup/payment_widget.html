@@ -32,7 +32,9 @@
 </head>
 {% if reload %}
     <script type="text/javascript" nonce="{{ csp_nonce }}">
-        window.top.location.reload()
+        const url = new URL(window.top.location.href);
+        url.searchParams.set('paid', 'yes');
+        window.top.location.href = url.href
     </script>
     <body>
     <div class="title">{% trans "Processing Payment" %}</div>
