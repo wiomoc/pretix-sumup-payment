@@ -23,7 +23,8 @@ logger = logging.getLogger("pretix.plugins.sumup")
 
 class SumUp(BasePaymentProvider):
     identifier = "sumup"
-    verbose_name = "SumUp"
+    verbose_name = _("Credit card via SumUp")
+    public_name = _("Credit card")
     abort_pending_allowed = True
 
     @property
@@ -86,7 +87,7 @@ class SumUp(BasePaymentProvider):
         order = payment.order
         event = order.event
 
-        has_valid_checkout = self.synchronize_payment_status(payment)
+        has_valid_checkout = self._synchronize_payment_status(payment)
         if has_valid_checkout:
             return
         try:
@@ -94,6 +95,7 @@ class SumUp(BasePaymentProvider):
                 checkout_reference=f"{event.slug}/{order.code}/{payment_id}",
                 amount=payment.amount,
                 currency=event.currency,
+                description=f"{event.name} #{order.code}",
                 merchant_code=self.settings.get("merchant_code"),
                 return_url=build_absolute_uri(
                     event,
@@ -126,7 +128,7 @@ class SumUp(BasePaymentProvider):
             return ""
 
         # Synchronize the payment status as backup if the return webhook fails
-        self.synchronize_payment_status(payment)
+        self._synchronize_payment_status(payment)
 
         return SafeString(
             '<iframe src="{}" width="100%" height="630" frameBorder=0>'.format(
@@ -145,7 +147,87 @@ class SumUp(BasePaymentProvider):
     def payment_is_valid_session(self, request):
         return True
 
-    def synchronize_payment_status(self, payment, force=False):
+    def cancel_payment(self, payment):
+        checkout_id = payment.info_data.get("sumup_checkout_id")
+        if checkout_id:
+            try:
+                sumup_client.cancel_checkout(
+                    checkout_id, self.settings.get("access_token")
+                )
+            except Exception as err:
+                logger.warn(f"Error while canceling sumup checkout: {err}")
+                pass  # Ignore errors, this hasn't any impact on us
+        super().cancel_payment(payment)
+
+    def payment_refund_supported(self, payment):
+        self._synchronize_payment_status(payment)
+        return payment.info_data.get("sumup_transaction") is not None
+
+    def payment_partial_refund_supported(self, payment):
+        self._synchronize_payment_status(payment)
+        return payment.info_data.get("sumup_transaction") is not None
+
+    def execute_refund(self, refund):
+        payment = refund.payment
+        transaction = payment.info_data.get("sumup_transaction")
+        if not transaction:
+            logger.exception(
+                "Error while refunding sumup transaction. No transaction found"
+            )
+            raise PaymentException(_("Error while refunding sumup transaction"))
+        try:
+            sumup_client.refund_transaction(
+                transaction_id=transaction["id"],
+                amount=float(refund.amount),
+                access_token=self.settings.get("access_token"),
+            )
+            refund.done()
+        except Exception as err:
+            logger.exception(f"Error while refunding sumup transaction: {err}")
+            refund.state = OrderRefund.REFUND_STATE_FAILED
+            refund.save(update_fields=["state"])
+            raise PaymentException(_("Error while refunding sumup transaction"))
+
+        # Synchronize the transaction to get the refund status
+        self._try_synchronize_transaction(payment, transaction["id"])
+
+    def render_invoice_text(self, order, payment):
+        transaction = payment.info_data.get("sumup_transaction")
+        if not transaction:
+            return ""
+        return _("Payed via SumUp\n{} **** **** **** {}\nAuth code: {}").format(
+            transaction["card"]["type"],
+            transaction["card"]["last_4_digits"],
+            transaction["auth_code"],
+        )
+
+    def payment_presale_render(self, payment):
+        transaction = payment.info_data.get("sumup_transaction")
+        if not transaction:
+            return ""
+
+        return get_template("pretix_sumup/payment_admin_info.html").render(
+            {
+                "card_type": transaction["card"]["type"],
+                "card_last_4_digit": transaction["card"]["last_4_digits"],
+                "transaction_code": transaction["transaction_code"],
+                "merchant_code": transaction["merchant_code"],
+            }
+        )
+
+    def payment_control_render(self, order, payment):
+        return self.payment_presale_render(payment)
+
+    def matching_id(self, payment):
+        transaction = payment.info_data.get("sumup_transaction")
+        if not transaction:
+            return None
+        return transaction.get("transaction_code")
+
+    def api_payment_details(self, payment):
+        return {"sumup_transaction": payment.info_data.get("sumup_transaction")}
+
+    def _synchronize_payment_status(self, payment, force=False):
         """
         Synchronizes the payment status with the SumUp Checkout.
         :param force: True if the payment status should be synchronized even if it is already confirmed
@@ -179,18 +261,7 @@ class SumUp(BasePaymentProvider):
                 None,
             )
             if transaction_id is not None:
-                try:
-                    transaction = sumup_client.get_transaction(
-                        transaction_id, self.settings.get("access_token")
-                    )
-
-                    # split into multiple line is required to invoke the setter of info_data
-                    info_data = payment.info_data
-                    info_data["sumup_transaction"] = transaction
-                    payment.info_data = info_data
-                    payment.save()
-                except Exception as err:
-                    logger.warn(f"Error while synchronizing sumup transaction: {err}")
+                self._try_synchronize_transaction(payment, transaction_id)
 
             if not payment.state == OrderPayment.PAYMENT_STATE_CONFIRMED:
                 payment.confirm()
@@ -205,83 +276,19 @@ class SumUp(BasePaymentProvider):
                 payment.fail()
             return False
 
-    def cancel_payment(self, payment):
-        checkout_id = payment.info_data.get("sumup_checkout_id")
-        if checkout_id:
-            try:
-                sumup_client.cancel_checkout(
-                    checkout_id, self.settings.get("access_token")
-                )
-            except Exception as err:
-                logger.warn(f"Error while canceling sumup checkout: {err}")
-                pass  # Ignore errors, this hasn't any impact on us
-        super().cancel_payment(payment)
-
-    def payment_refund_supported(self, payment):
-        self.synchronize_payment_status(payment)
-        return payment.info_data.get("sumup_transaction") is not None
-
-    def payment_partial_refund_supported(self, payment):
-        self.synchronize_payment_status(payment)
-        return payment.info_data.get("sumup_transaction") is not None
-
-    def execute_refund(self, refund):
-        payment = refund.payment
-        transaction = payment.info_data.get("sumup_transaction")
-        if not transaction:
-            logger.exception(
-                "Error while refunding sumup transaction. No transaction found"
-            )
-            raise PaymentException(_("Error while refunding sumup transaction"))
+    def _try_synchronize_transaction(self, payment, transaction_id):
         try:
-            sumup_client.refund_transaction(
-                transaction_id=transaction["id"],
-                amount=float(refund.amount),
+            transaction = sumup_client.get_transaction(
+                transaction_id=transaction_id,
                 access_token=self.settings.get("access_token"),
             )
-            refund.done()
+            # split into multiple line is required to invoke the setter of info_data
+            info_data = payment.info_data
+            info_data["sumup_transaction"] = transaction
+            payment.info_data = info_data
+            payment.save()
         except Exception as err:
-            logger.exception(f"Error while refunding sumup transaction: {err}")
-            refund.state = OrderRefund.REFUND_STATE_FAILED
-            refund.save(update_fields=["state"])
-            raise PaymentException(_("Error while refunding sumup transaction"))
-
-    def render_invoice_text(self, order, payment):
-        transaction = payment.info_data.get("sumup_transaction")
-        if not transaction:
-            return ""
-        return _("Payed via SumUp\n{} **** **** **** {}\nAuth code: {}").format(
-            transaction["card"]["type"],
-            transaction["card"]["last_4_digits"],
-            transaction["auth_code"],
-        )
-
-    def payment_presale_render(self, payment):
-        transaction = payment.info_data.get("sumup_transaction")
-        if not transaction:
-            return ""
-
-        return get_template("pretix_sumup/payment_admin_info.html").render(
-            {
-                "auth_code": transaction["auth_code"],
-                "card_type": transaction["card"]["type"],
-                "card_last_4_digit": transaction["card"]["last_4_digits"],
-                "transaction_code": transaction["transaction_code"],
-                "merchant_code": transaction["merchant_code"],
-            }
-        )
-
-    def payment_control_render(self, order, payment):
-        return self.payment_presale_render(payment)
-
-    def matching_id(self, payment):
-        transaction = payment.info_data.get("sumup_transaction")
-        if not transaction:
-            return None
-        return transaction.get("transaction_code")
-
-    def api_payment_details(self, payment):
-        return {"sumup_transaction": payment.info_data.get("sumup_transaction")}
+            logger.warn(f"Error while synchronizing sumup transaction: {err}")
 
 
 def checkout_event(request, *args, **kwargs):
@@ -289,7 +296,7 @@ def checkout_event(request, *args, **kwargs):
     order_payment = get_object_or_404(
         OrderPayment, pk=kwargs.get("payment"), order__event=request.event
     )
-    provider.synchronize_payment_status(order_payment)
+    provider._synchronize_payment_status(order_payment)
     return HttpResponse(status=204, content=b"")
 
 
@@ -303,7 +310,7 @@ def payment_widget(request, *args, **kwargs):
         order__secret=kwargs.get("secret"),
     )
     # Synchronize the payment status as backup if the return webhook fails
-    provider.synchronize_payment_status(order_payment)
+    provider._synchronize_payment_status(order_payment)
     checkout_id = order_payment.info_data.get("sumup_checkout_id")
     if not checkout_id:
         raise ValidationError(_("No SumUp checkout ID found."))

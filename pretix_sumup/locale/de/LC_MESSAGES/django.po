@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-01-22 17:52+0100\n"
+"POT-Creation-Date: 2024-01-23 16:04+0100\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Christoph Walcher\n"
 "Language-Team: \n"
@@ -15,11 +15,19 @@ msgstr ""
 msgid "Accept creditcard payments via SumUp"
 msgstr "Akzeptieren Sie Kreditkartenzahlungen über SumUp"
 
-#: .\pretix_sumup\payment.py:42
+#: .\pretix_sumup\payment.py:26
+msgid "Credit card via SumUp"
+msgstr "Kreditkarte über SumUp"
+
+#: .\pretix_sumup\payment.py:27
+msgid "Credit card"
+msgstr "Kreditkarte"
+
+#: .\pretix_sumup\payment.py:37
 msgid "API Key"
 msgstr "API Schlüssel"
 
-#: .\pretix_sumup\payment.py:45
+#: .\pretix_sumup\payment.py:40
 msgid ""
 "API keys are authorization tokens that allow pretix to call SumUp on your "
 "behalf. <a href=\"https://developer.sumup.com/api-keys\" target=\"_blank"
@@ -29,34 +37,30 @@ msgstr ""
 "Ihrem Namen aufzurufen. <a href=\"https://developer.sumup.com/api-keys\" "
 "target=\"_blank\">Klicken sie hier um API Schlüssel in SumUp zu verwalten</a>"
 
-#: .\pretix_sumup\payment.py:59
+#: .\pretix_sumup\payment.py:54
 msgid "Automatically filled in"
 msgstr "Wird automatisch ausgefüllt"
 
-#: .\pretix_sumup\payment.py:62
+#: .\pretix_sumup\payment.py:57
 msgid "Merchant Code"
 msgstr "Kundennummer"
 
-#: .\pretix_sumup\payment.py:117
+#: .\pretix_sumup\payment.py:114
 msgid "Error while creating sumup checkout"
 msgstr "Fehler beim Erstellen des SumUp Checkouts"
 
-#: .\pretix_sumup\payment.py:121
+#: .\pretix_sumup\payment.py:118
 msgid ""
 "After confirmation you will be redirected to SumUp to complete the payment."
 msgstr ""
 "Nach Bestätigung werden Sie zu SumUp weitergeleitet um die Zahlung "
 "abzuschließen."
 
-#: .\pretix_sumup\payment.py:169
-msgid "Error while synchronizing sumup checkout"
-msgstr "Fehler beim Synchronisieren des SumUp Checkouts"
-
-#: .\pretix_sumup\payment.py:243
+#: .\pretix_sumup\payment.py:176 .\pretix_sumup\payment.py:188
 msgid "Error while refunding sumup transaction"
 msgstr "Fehler beim Erstatten der SumUp Transaktion"
 
-#: .\pretix_sumup\payment.py:261
+#: .\pretix_sumup\payment.py:197
 msgid ""
 "Payed via SumUp\n"
 "{} **** **** **** {}\n"
@@ -66,7 +70,11 @@ msgstr ""
 "{} **** **** **** {}\n"
 "Authentisierungscode: {}"
 
-#: .\pretix_sumup\payment.py:317
+#: .\pretix_sumup\payment.py:252
+msgid "Error while synchronizing sumup checkout"
+msgstr "Fehler beim Synchronisieren des SumUp Checkouts"
+
+#: .\pretix_sumup\payment.py:316
 msgid "No SumUp checkout ID found."
 msgstr "Keine SumUp Checkout ID gefunden."
 
@@ -81,22 +89,22 @@ msgid "The API Key is invalid."
 msgstr "Der API Key ist ungültig."
 
 #: .\pretix_sumup\templates\pretix_sumup\payment_widget.html:19
-#: .\pretix_sumup\templates\pretix_sumup\payment_widget.html:41
+#: .\pretix_sumup\templates\pretix_sumup\payment_widget.html:44
 msgid "Processing Payment"
 msgstr "Bearbeite Zahlung"
 
 #: .\pretix_sumup\templates\pretix_sumup\payment_widget.html:24
-#: .\pretix_sumup\templates\pretix_sumup\payment_widget.html:44
+#: .\pretix_sumup\templates\pretix_sumup\payment_widget.html:47
 msgid "Last try rejected. Please check your entry and retry afterwards."
 msgstr ""
 "Der letzte Versuch die Zahlung durchzuführen wurde abgelehnt. Bitte "
 "überprüfen Sie ihre Daten und versuchen es erneut."
 
-#: .\pretix_sumup\templates\pretix_sumup\payment_widget.html:46
+#: .\pretix_sumup\templates\pretix_sumup\payment_widget.html:49
 msgid "Payment successful"
 msgstr "Bezahlung erfolgreich"
 
-#: .\pretix_sumup\templates\pretix_sumup\payment_widget.html:52
+#: .\pretix_sumup\templates\pretix_sumup\payment_widget.html:55
 msgid "Invalid card data. Please check your entry and retry afterwards."
 msgstr ""
 "Ihre Kartendaten sind unzulässig. Bitte überprüfen Sie diese und versuchen "

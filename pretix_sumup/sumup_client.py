@@ -26,12 +26,19 @@ def validate_access_token_and_get_merchant_code(access_token):
 
 
 def create_checkout(
-    amount, currency, checkout_reference, merchant_code, return_url, access_token
+    amount,
+    currency,
+    checkout_reference,
+    description,
+    merchant_code,
+    return_url,
+    access_token,
 ):
     response = requests.post(
         f"{SUMUP_BASE_URL}/checkouts",
         json={
             "checkout_reference": checkout_reference,
+            "description": description,
             "amount": float(amount),
             "currency": currency,
             "merchant_code": merchant_code,
