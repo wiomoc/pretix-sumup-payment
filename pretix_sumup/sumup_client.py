@@ -77,10 +77,10 @@ def cancel_checkout(checkout_id, access_token):
     response.raise_for_status()
 
 
-def get_transaction_by_code(transaction_code, access_token):
+def get_transaction(transaction_id, access_token):
     response = requests.get(
         f"{SUMUP_BASE_URL}/me/transactions/",
-        params={"transaction_code": transaction_code},
+        params={"id": transaction_id},
         headers=_auth_header(access_token),
     )
 

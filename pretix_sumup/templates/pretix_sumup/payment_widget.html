@@ -1,7 +1,7 @@
 {% load i18n %}
 <html>
 <head>
-    <style>
+    <style nonce="{{ csp_nonce }}">
         .title {
             font-family: "Open Sans", "OpenSans", "Helvetica Neue", Helvetica, Arial, sans-serif;
             font-size: 18px;
@@ -12,7 +12,7 @@
     </style>
 </head>
 {% if reload %}
-<script type="text/javascript">
+<script type="text/javascript" nonce="{{ csp_nonce }}">
     window.top.location.reload()
 </script>
 <body>
@@ -30,11 +30,12 @@
         type="text/javascript"
         src="https://gateway.sumup.com/gateway/ecom/card/v2/sdk.js"
 ></script>
-<script type="text/javascript">
+<script type="text/javascript" nonce="{{ csp_nonce }}">
     SumUpCard.mount({
         id: 'sumup-card',
         locale: '{{ locale }}',
         checkoutId: '{{ checkout_id }}',
+        nonce: '{{ csp_nonce }}',
         email: '{{ email }}',
         onResponse: function (type, body) {
             console.log(type, body);
