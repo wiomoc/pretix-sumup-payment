@@ -110,9 +110,10 @@ class SumUp(BasePaymentProvider):
             payment.info_data = info_data
             payment.save()
         except Exception as err:
-            payment.fail(info={"error": str(err)})
-            logger.exception(f"Error while creating sumup checkout: {err}")
-            raise PaymentException(_("Error while creating sumup checkout"))
+            internal_exception_message = f"Error while creating SumUp checkout: {err}"
+            payment.fail(info=internal_exception_message)
+            logger.exception(internal_exception_message)
+            raise PaymentException(_("Error while creating SumUp checkout"))
 
     def checkout_confirm_render(self, request, **kwargs):
         return _(
@@ -123,7 +124,7 @@ class SumUp(BasePaymentProvider):
         return self.checkout_confirm_render(request, **kwargs)
 
     def payment_pending_render(self, request, payment):
-        checkout_id = payment.info_data["sumup_checkout_id"]
+        checkout_id = payment.info_data.get("sumup_checkout_id")
         if checkout_id is None:
             return ""
 
@@ -155,7 +156,7 @@ class SumUp(BasePaymentProvider):
                     checkout_id, self.settings.get("access_token")
                 )
             except Exception as err:
-                logger.warn(f"Error while canceling sumup checkout: {err}")
+                logger.warn(f"Error while canceling SumUp checkout: {err}")
                 pass  # Ignore errors, this hasn't any impact on us
         super().cancel_payment(payment)
 
@@ -174,7 +175,7 @@ class SumUp(BasePaymentProvider):
             logger.exception(
                 "Error while refunding sumup transaction. No transaction found"
             )
-            raise PaymentException(_("Error while refunding sumup transaction"))
+            raise PaymentException(_("Error while refunding SumUp transaction"))
         try:
             sumup_client.refund_transaction(
                 transaction_id=transaction["id"],
@@ -183,10 +184,10 @@ class SumUp(BasePaymentProvider):
             )
             refund.done()
         except Exception as err:
-            logger.exception(f"Error while refunding sumup transaction: {err}")
+            logger.exception(f"Error while refunding SumUp transaction: {err}")
             refund.state = OrderRefund.REFUND_STATE_FAILED
             refund.save(update_fields=["state"])
-            raise PaymentException(_("Error while refunding sumup transaction"))
+            raise PaymentException(_("Error while refunding SumUp transaction"))
 
         # Synchronize the transaction to get the refund status
         self._try_synchronize_transaction(payment, transaction["id"])
@@ -248,8 +249,8 @@ class SumUp(BasePaymentProvider):
                 checkout_id, self.settings.get("access_token")
             )
         except Exception as err:
-            logger.exception(f"Error while synchronizing sumup checkout: {err}")
-            raise PaymentException(_("Error while synchronizing sumup checkout"))
+            logger.exception(f"Error while synchronizing SumUp checkout: {err}")
+            raise PaymentException(_("Error while synchronizing SumUp checkout"))
         if checkout["status"] == "PAID":
             # Every try of processing the payment results in a transaction, we only care about the successful one
             transaction_id = next(
@@ -288,7 +289,7 @@ class SumUp(BasePaymentProvider):
             payment.info_data = info_data
             payment.save()
         except Exception as err:
-            logger.warn(f"Error while synchronizing sumup transaction: {err}")
+            logger.warn(f"Error while synchronizing SumUp transaction: {err}")
 
 
 def checkout_event(request, *args, **kwargs):

@@ -1,9 +1,9 @@
-Pretix Sumup Payment
+Pretix SumUp Payment
 ==========================
 
 This is a plugin for `pretix`_. 
 
-Enables creditcard payments via Sumup
+Enables credit card payments via SumUp
 
 Development setup
 -----------------

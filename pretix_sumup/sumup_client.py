@@ -9,6 +9,34 @@ def _auth_header(access_token):
     return {"Authorization": "Bearer " + access_token}
 
 
+class SumupApiException(Exception):
+    def __init__(self, message, error_code, param):
+        super().__init__(message)
+        self.message = message
+        self.error_code = error_code
+        self.param = param
+
+    def __str__(self):
+        exception_str = f"{self.error_code} - {self.message}"
+        if self.param:
+            exception_str += f" ({self.param})"
+        return exception_str
+
+
+def _handle_response_status(response):
+    # Handle 4xx errors
+    if response.status_code // 100 == 4:
+        response_body = response.json()
+        raise SumupApiException(
+            response_body.get("message") or response.get("error_message") or "",
+            response_body.get("error_code"),
+            response_body.get("param"),
+        )
+
+    # Forward other errors
+    response.raise_for_status()
+
+
 def validate_access_token_and_get_merchant_code(access_token):
     if not access_token:
         raise ValidationError(_("No API Key given."))
@@ -18,9 +46,7 @@ def validate_access_token_and_get_merchant_code(access_token):
     if response.status_code == 401:
         raise ValidationError(_("The API Key is invalid."))
 
-    # Forward other errors
-    response.raise_for_status()
-
+    _handle_response_status(response)
     response_body = response.json()
     return response_body["merchant_profile"]["merchant_code"]
 
@@ -46,12 +72,7 @@ def create_checkout(
         },
         headers=_auth_header(access_token),
     )
-
-    if response.status_code == 401:
-        raise ValidationError(_("The API Key is invalid."))
-
-    # Forward other errors
-    response.raise_for_status()
+    _handle_response_status(response)
 
     response_body = response.json()
     return response_body["id"]
@@ -61,12 +82,7 @@ def get_checkout(checkout_id, access_token):
     response = requests.get(
         f"{SUMUP_BASE_URL}/checkouts/{checkout_id}", headers=_auth_header(access_token)
     )
-
-    if response.status_code == 401:
-        raise ValidationError(_("The API Key is invalid."))
-
-    # Forward other errors
-    response.raise_for_status()
+    _handle_response_status(response)
 
     response_body = response.json()
     return response_body
@@ -76,12 +92,7 @@ def cancel_checkout(checkout_id, access_token):
     response = requests.delete(
         f"{SUMUP_BASE_URL}/checkouts/{checkout_id}", headers=_auth_header(access_token)
     )
-
-    if response.status_code == 401:
-        raise ValidationError(_("The API Key is invalid."))
-
-    # Forward other errors
-    response.raise_for_status()
+    _handle_response_status(response)
 
 
 def get_transaction(transaction_id, access_token):
@@ -91,11 +102,7 @@ def get_transaction(transaction_id, access_token):
         headers=_auth_header(access_token),
     )
 
-    if response.status_code == 401:
-        raise ValidationError(_("The API Key is invalid."))
-
-    # Forward other errors
-    response.raise_for_status()
+    _handle_response_status(response)
 
     response_body = response.json()
     return response_body
@@ -108,8 +115,4 @@ def refund_transaction(transaction_id, access_token, amount=None):
         headers=_auth_header(access_token),
     )
 
-    if response.status_code == 401:
-        raise ValidationError(_("The API Key is invalid."))
-
-    # Forward other errors
-    response.raise_for_status()
+    _handle_response_status(response)
