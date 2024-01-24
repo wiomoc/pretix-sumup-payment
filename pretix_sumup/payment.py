@@ -234,7 +234,7 @@ class SumUp(BasePaymentProvider):
     def _synchronize_payment_status(self, payment, force=False):
         """
         Synchronizes the payment status with the SumUp Checkout.
-        :param force: True if the payment status should be synchronized even if it is already confirmed
+        :param force: True if the payment status should be synchronized even if it is already confirmed and the transactions was synchronized
         :param payment: The OrderPayment object to synchronize
         :return: True if a SumUp checkout exists which hasn't failed, False if no checkout exists or the checkout has failed
         """
@@ -255,6 +255,9 @@ class SumUp(BasePaymentProvider):
             logger.exception(f"Error while synchronizing SumUp checkout: {err}")
             raise PaymentException(_("Error while synchronizing SumUp checkout"))
         if checkout["status"] == "PAID":
+            if not payment.state == OrderPayment.PAYMENT_STATE_CONFIRMED:
+                payment.confirm()
+
             # Every try of processing the payment results in a transaction, we only care about the successful one
             transaction_id = next(
                 (
@@ -266,9 +269,6 @@ class SumUp(BasePaymentProvider):
             )
             if transaction_id is not None:
                 self._try_synchronize_transaction(payment, transaction_id)
-
-            if not payment.state == OrderPayment.PAYMENT_STATE_CONFIRMED:
-                payment.confirm()
             return True
         elif checkout["status"] == "PENDING":
             if not payment.state == OrderPayment.PAYMENT_STATE_PENDING:
