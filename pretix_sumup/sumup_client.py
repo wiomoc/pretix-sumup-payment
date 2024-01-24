@@ -9,7 +9,7 @@ def _auth_header(access_token):
     return {"Authorization": "Bearer " + access_token}
 
 
-class SumupApiException(Exception):
+class SumupApiError(Exception):
     def __init__(self, message, error_code, param):
         super().__init__(message)
         self.message = message
@@ -27,7 +27,7 @@ def _handle_response_status(response):
     # Handle 4xx errors
     if response.status_code // 100 == 4:
         response_body = response.json()
-        raise SumupApiException(
+        raise SumupApiError(
             response_body.get("message") or response.get("error_message") or "",
             response_body.get("error_code"),
             response_body.get("param"),

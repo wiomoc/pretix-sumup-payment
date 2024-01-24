@@ -2,7 +2,6 @@ import logging
 from collections import OrderedDict
 from django import forms
 from django.template.loader import get_template
-from django.utils.safestring import SafeString
 from django.utils.translation import gettext_lazy as _
 from pretix.base.forms import SecretKeySettingsField
 from pretix.base.models import OrderPayment, OrderRefund
@@ -125,9 +124,9 @@ class SumUp(BasePaymentProvider):
         # Synchronize the payment status as backup if the return webhook fails
         self._synchronize_payment_status(payment)
 
-        return SafeString(
-            '<iframe src="{}" width="100%" height="630" frameBorder=0>'.format(
-                eventreverse(
+        return get_template("pretix_sumup/pending.html").render(
+            {
+                "iframe_url": eventreverse(
                     payment.order.event,
                     "plugins:pretix_sumup:payment_widget",
                     kwargs={
@@ -136,7 +135,7 @@ class SumUp(BasePaymentProvider):
                         "secret": payment.order.secret,
                     },
                 )
-            )
+            }
         )
 
     def payment_is_valid_session(self, request):
