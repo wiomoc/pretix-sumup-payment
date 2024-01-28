@@ -1,10 +1,12 @@
 import logging
 from collections import OrderedDict
+from decimal import Decimal
 from django import forms
+from django.http import HttpRequest
 from django.template.loader import get_template
 from django.utils.translation import gettext_lazy as _
 from pretix.base.forms import SecretKeySettingsField
-from pretix.base.models import OrderPayment, OrderRefund
+from pretix.base.models import Order, OrderPayment, OrderRefund
 from pretix.base.payment import BasePaymentProvider, PaymentException
 from pretix.multidomain.urlreverse import build_absolute_uri, eventreverse
 from pretix.plugins.stripe.forms import StripeKeyValidator
@@ -57,7 +59,7 @@ class SumUp(BasePaymentProvider):
         d.move_to_end("_enabled", last=False)
         return d
 
-    def settings_form_clean(self, cleaned_data):
+    def settings_form_clean(self, cleaned_data: dict):
         cleaned_data = super().settings_form_clean(cleaned_data)
         access_token = cleaned_data.get("payment_sumup_access_token")
         if access_token is None:
@@ -69,13 +71,13 @@ class SumUp(BasePaymentProvider):
         cleaned_data["payment_sumup_merchant_code"] = merchant_code
         return cleaned_data
 
-    def is_allowed(self, request, total=None):
+    def is_allowed(self, request: HttpRequest, total: Decimal = None):
         if total is None:
             return True
         # minimum amount is 1 EUR or similar in other currencies
         return total >= 1
 
-    def execute_payment(self, request, payment):
+    def execute_payment(self, request: HttpRequest, payment: OrderPayment):
         payment_id = payment.local_id
         order = payment.order
         event = order.event
@@ -108,15 +110,15 @@ class SumUp(BasePaymentProvider):
             logger.exception(internal_exception_message)
             raise PaymentException(_("Error while creating SumUp checkout"))
 
-    def checkout_confirm_render(self, request, **kwargs):
+    def checkout_confirm_render(self, request: HttpRequest, **kwargs):
         return _(
             "After confirmation you will be redirected to SumUp to complete the payment."
         )
 
-    def payment_form_render(self, request, **kwargs):
+    def payment_form_render(self, request: HttpRequest, **kwargs):
         return self.checkout_confirm_render(request, **kwargs)
 
-    def payment_pending_render(self, request, payment):
+    def payment_pending_render(self, request: HttpRequest, payment: OrderPayment):
         checkout_id = payment.info_data.get("sumup_checkout_id")
         if checkout_id is None:
             return ""
@@ -138,10 +140,10 @@ class SumUp(BasePaymentProvider):
             }
         )
 
-    def payment_is_valid_session(self, request):
+    def payment_is_valid_session(self, request: HttpRequest):
         return True
 
-    def cancel_payment(self, payment):
+    def cancel_payment(self, payment: OrderPayment):
         checkout_id = payment.info_data.get("sumup_checkout_id")
         if checkout_id:
             try:
@@ -153,15 +155,15 @@ class SumUp(BasePaymentProvider):
                 pass  # Ignore errors, this hasn't any impact on us
         super().cancel_payment(payment)
 
-    def payment_refund_supported(self, payment):
+    def payment_refund_supported(self, payment: OrderPayment):
         self._synchronize_payment_status(payment)
         return payment.info_data.get("sumup_transaction") is not None
 
-    def payment_partial_refund_supported(self, payment):
+    def payment_partial_refund_supported(self, payment: OrderPayment):
         self._synchronize_payment_status(payment)
         return payment.info_data.get("sumup_transaction") is not None
 
-    def execute_refund(self, refund):
+    def execute_refund(self, refund: OrderRefund):
         payment = refund.payment
         transaction = payment.info_data.get("sumup_transaction")
         if not transaction:
@@ -185,7 +187,7 @@ class SumUp(BasePaymentProvider):
         # Synchronize the transaction to get the refund status
         self._try_synchronize_transaction(payment, transaction["id"])
 
-    def render_invoice_text(self, order, payment):
+    def render_receipt_text(self, order: Order, payment: OrderPayment):
         transaction = payment.info_data.get("sumup_transaction")
         if not transaction:
             return ""
@@ -195,19 +197,7 @@ class SumUp(BasePaymentProvider):
             transaction["auth_code"],
         )
 
-    def payment_presale_render(self, payment):
-        transaction = payment.info_data.get("sumup_transaction")
-        if not transaction:
-            return ""
-
-        return get_template("pretix_sumup/presale.html").render(
-            {
-                "card_type": transaction["card"]["type"],
-                "card_last_4_digit": transaction["card"]["last_4_digits"],
-            }
-        )
-
-    def payment_control_render(self, order, payment):
+    def payment_presale_render(self, payment: OrderPayment):
         transaction = payment.info_data.get("sumup_transaction")
         if not transaction:
             return ""
@@ -216,8 +206,47 @@ class SumUp(BasePaymentProvider):
             {
                 "card_type": transaction["card"]["type"],
                 "card_last_4_digit": transaction["card"]["last_4_digits"],
-                "transaction_code": transaction["transaction_code"],
-                "merchant_code": transaction["merchant_code"],
+            }
+        )
+
+    def payment_control_render(self, order: Order, payment: OrderPayment):
+        transaction = payment.info_data.get("sumup_transaction")
+        if not transaction:
+            return ""
+
+        return get_template("pretix_sumup/control.html").render(
+            {
+                "card_type": transaction["card"]["type"],
+                "card_last_4_digit": transaction["card"]["last_4_digits"],
+                "receipt_url": self._build_receipt_url(transaction),
+            }
+        )
+
+    def refund_control_render(self, request: HttpRequest, refund: OrderRefund):
+        if refund.amount != refund.payment.amount:
+            # we are not able to match partial refunds which result potentially in multiple refunds
+            return ""
+        transaction = refund.payment.info_data.get("sumup_transaction")
+        if not transaction:
+            return ""
+        refund_event_id = next(
+            (
+                event.get("id")
+                for event in transaction.get("events")
+                if event.get("type") == "REFUND"
+            ),
+            None,
+        )
+        if not refund_event_id:
+            return ""
+
+        return get_template("pretix_sumup/control.html").render(
+            {
+                "card_type": transaction["card"]["type"],
+                "card_last_4_digit": transaction["card"]["last_4_digits"],
+                "receipt_url": self._build_receipt_url(
+                    transaction, event_id=refund_event_id
+                ),
             }
         )
 
@@ -230,7 +259,17 @@ class SumUp(BasePaymentProvider):
     def api_payment_details(self, payment):
         return {"sumup_transaction": payment.info_data.get("sumup_transaction")}
 
-    def _synchronize_payment_status(self, payment, force=False):
+    def _build_receipt_url(self, transaction, event_id: str = None):
+        merchant_code = transaction.get("merchant_code")
+        transaction_code = transaction.get("transaction_code")
+        if not merchant_code or not transaction_code:
+            return None
+        url = f"https://receipts-ng.sumup.com/v0.1/receipts/{transaction_code}?mid={merchant_code}&format=pdf"
+        if event_id:
+            url += f"&tx_event_id={event_id}"
+        return url
+
+    def _synchronize_payment_status(self, payment: OrderPayment, force: bool = False):
         """
         Synchronizes the payment status with the SumUp Checkout.
         :param force: True if the payment status should be synchronized even if it is already confirmed and the transactions was synchronized
@@ -279,7 +318,7 @@ class SumUp(BasePaymentProvider):
                 payment.fail()
             return False
 
-    def _try_synchronize_transaction(self, payment, transaction_id):
+    def _try_synchronize_transaction(self, payment: OrderPayment, transaction_id: str):
         try:
             transaction = sumup_client.get_transaction(
                 transaction_id=transaction_id,
