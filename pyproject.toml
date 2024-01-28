@@ -1,7 +1,7 @@
 [project]
 name = "pretix-sumup-payment"
 dynamic = ["version"]
-description = "Enables creditcard payments via Sumup"
+description = "Enables creditcard payments via SumUp"
 readme = "README.rst"
 license = {text = "Apache"}
 keywords = ["pretix"]
@@ -25,7 +25,9 @@ build = "pretix_plugin_build.build:CustomBuild"
 requires = [
     "setuptools",
     "pretix-plugin-build",
+    "setuptools_scm"
 ]
+build-backend = "setuptools.build_meta"
 
 [project.urls]
 homepage = "https://github.com/wiomoc/pretix-sumup-payment"
@@ -34,8 +36,8 @@ repository = "https://github.com/wiomoc/pretix-sumup-payment"
 [tool.setuptools]
 include-package-data = true
 
-[tool.setuptools.dynamic]
-version = {attr = "pretix_sumup.__version__"}
+
+[tool.setuptools_scm]
 
 [tool.setuptools.packages.find]
 include = ["pretix*"]
