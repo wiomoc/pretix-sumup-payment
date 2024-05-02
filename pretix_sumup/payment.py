@@ -49,6 +49,7 @@ class SumUp(BasePaymentProvider):
                                 "placeholder": _("Automatically filled in"),
                             }
                         ),
+                        required=False,
                         label=_("Merchant Code"),
                     ),
                 ),
