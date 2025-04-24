@@ -28,7 +28,7 @@ def _handle_response_status(response):
     if response.status_code // 100 == 4:
         response_body = response.json()
         raise SumupApiError(
-            response_body.get("message") or response.get("error_message") or "",
+            response_body.get("message") or response_body.get("error_message") or "",
             response_body.get("error_code"),
             response_body.get("param"),
         )
