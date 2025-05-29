@@ -1,4 +1,5 @@
 import logging
+import json
 from collections import OrderedDict
 from decimal import Decimal
 from django import forms
@@ -107,7 +108,7 @@ class SumUp(BasePaymentProvider):
             payment.save()
         except Exception as err:
             internal_exception_message = f"Error while creating SumUp checkout: {err}"
-            payment.fail(info=internal_exception_message)
+            payment.fail(info=json.dumps({"error": internal_exception_message}))
             logger.exception(internal_exception_message)
             raise PaymentException(_("Error while creating SumUp checkout"))
 
