@@ -2,7 +2,6 @@ name: Code Style
 
 on:
   push:
-    branches: [ main, master ]
     paths-ignore:
       - 'pretix_sumup/locale/**'
       - 'pretix_sumup/static/**'
@@ -22,7 +21,7 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: 3.11
-      - uses: actions/cache@v1
+      - uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/setup.py') }}
@@ -43,7 +42,7 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: 3.11
-      - uses: actions/cache@v1
+      - uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/setup.py') }}
@@ -65,7 +64,7 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: 3.11
-      - uses: actions/cache@v1
+      - uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/setup.py') }}
@@ -87,7 +86,7 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: 3.11
-      - uses: actions/cache@v1
+      - uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/setup.py') }}
