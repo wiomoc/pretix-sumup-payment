@@ -1,83 +1,77 @@
 {% load i18n %}
-<html>
-<head>
-    <style nonce="{{ csp_nonce }}">
-        .title {
-            font-family: "Open Sans", "OpenSans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-            font-size: 18px;
-            color: #222222;
-            width: 100%;
-            text-align: center;
-        }
+<style nonce="{{ csp_nonce }}">
+    .title {
+        font-family: "Open Sans", "OpenSans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: 18px;
+        color: #222222;
+        width: 100%;
+        text-align: center;
+    }
 
-        .loader {
-            border: 12px solid #eeeeee;
-            border-top: 12px solid #8e44b3;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            animation: spin 2s linear infinite;
-            margin: 120px auto;
-        }
+    .loader {
+        border: 12px solid #eeeeee;
+        border-top: 12px solid #8e44b3;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        animation: spin 2s linear infinite;
+        margin: 120px auto;
+    }
 
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-            100% {
-                transform: rotate(360deg);
-            }
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
         }
-    </style>
-</head>
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+</style>
 {% if reload %}
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
-        const url = new URL(window.top.location.href);
-        url.searchParams.set('paid', 'yes');
-        window.top.location.href = url.href
-    </script>
-    <body>
-    <div class="title">{% trans "Processing Payment" %}</div>
+<script type="text/javascript" nonce="{{ csp_nonce }}">
+    const url = new URL(window.location.href);
+    url.searchParams.set('paid', 'yes');
+    window.location.href = url.href
+</script>
+<div class="title">{% trans "Processing Payment" %}</div>
 {% else %}
-    <body>
-    <div class="title">
-        {% if retry %}
-            {% trans "Last try rejected. Please check your entry and retry afterwards." %}
-        {% endif %}
-    </div>
-    <div id="sumup-card"></div>
-    </body>
-    <script
-            type="text/javascript"
-            src="https://gateway.sumup.com/gateway/ecom/card/v2/sdk.js"
-    ></script>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
-        SumUpCard.mount({
-            id: 'sumup-card',
-            locale: '{{ locale }}',
-            checkoutId: '{{ checkout_id }}',
-            nonce: '{{ csp_nonce }}',
-            email: '{{ email }}',
-            onResponse: function (type, body) {
-                console.log(type, body);
-                const titleEl = document.querySelector('.title')
-                if (type === 'sent') {
-                    titleEl.innerHTML = '{% trans "Processing Payment" %}';
-                } else if (type === 'success') {
-                    if (body.status === "FAILED") {
-                        titleEl.innerHTML = '{% trans "Last try rejected. Please check your entry and retry afterwards." %}';
-                    } else if (body.status === "PAID") {
-                        document.getElementById("sumup-card").innerHTML =
-                            '<div class="title">{% trans "Payment successful" %}</div><div class="loader"></div>';
-                        window.location.reload()
-                    } else {
-                        window.location.reload()
-                    }
-                } else if (type === 'invalid') {
-                    titleEl.innerHTML = '{% trans "Invalid card data. Please check your entry and retry afterwards." %}';
+<div class="title">
+    {% if retry %}
+        {% trans "Last try rejected. Please check your entry and retry afterwards." %}
+    {% endif %}
+</div>
+<div id="sumup-card"></div>
+</body>
+<script
+        type="text/javascript"
+        src="https://gateway.sumup.com/gateway/ecom/card/v2/sdk.js"
+></script>
+<script type="text/javascript" nonce="{{ csp_nonce }}">
+    SumUpCard.mount({
+        id: 'sumup-card',
+        locale: '{{ locale }}',
+        checkoutId: '{{ checkout_id }}',
+        nonce: '{{ csp_nonce }}',
+        email: '{{ email }}',
+        onResponse: function (type, body) {
+            console.log(type, body);
+            const titleEl = document.querySelector('.title')
+            if (type === 'sent') {
+                titleEl.innerHTML = '{% trans "Processing Payment" %}';
+            } else if (type === 'success') {
+                if (body.status === "FAILED") {
+                    titleEl.innerHTML = '{% trans "Last try rejected. Please check your entry and retry afterwards." %}';
+                } else if (body.status === "PAID") {
+                    document.getElementById("sumup-card").innerHTML =
+                        '<div class="title">{% trans "Payment successful" %}</div><div class="loader"></div>';
+                    window.location.reload()
+                } else {
+                    window.location.reload()
                 }
-            },
-        });
-    </script>
+            } else if (type === 'invalid') {
+                titleEl.innerHTML = '{% trans "Invalid card data. Please check your entry and retry afterwards." %}';
+            }
+        },
+    });
+</script>
 {% endif %}
-</html>

@@ -1,15 +1,16 @@
-import json
 import logging
 from collections import OrderedDict
 from decimal import Decimal
 from django import forms
 from django.http import HttpRequest
 from django.template.loader import get_template
+from django.utils.crypto import get_random_string
 from django.utils.translation import gettext_lazy as _
 from pretix.base.forms import SecretKeySettingsField
+from pretix.base.middleware import get_language_from_request
 from pretix.base.models import Order, OrderPayment, OrderRefund
 from pretix.base.payment import BasePaymentProvider, PaymentException
-from pretix.multidomain.urlreverse import build_absolute_uri, eventreverse
+from pretix.multidomain.urlreverse import build_absolute_uri
 from pretix.plugins.stripe.forms import StripeKeyValidator
 
 from pretix_sumup import sumup_client
@@ -108,7 +109,7 @@ class SumUp(BasePaymentProvider):
             payment.save()
         except Exception as err:
             internal_exception_message = f"Error while creating SumUp checkout: {err}"
-            payment.fail(info=json.dumps({"error": internal_exception_message}))
+            payment.fail(info={"error": internal_exception_message})
             logger.exception(internal_exception_message)
             raise PaymentException(_("Error while creating SumUp checkout"))
 
@@ -128,19 +129,29 @@ class SumUp(BasePaymentProvider):
         # Synchronize the payment status as backup if the return webhook fails
         self._synchronize_payment_status(payment)
 
-        return get_template("pretix_sumup/pending.html").render(
-            {
-                "iframe_url": eventreverse(
-                    payment.order.event,
-                    "plugins:pretix_sumup:payment_widget",
-                    kwargs={
-                        "payment": payment.pk,
-                        "order": payment.order.code,
-                        "secret": payment.order.secret,
-                    },
-                )
+        csp_nonce = get_random_string(10)
+        # XXX: smuggle csp nonce in http request to our csp middleware signal handler
+        request.__dict__["sumup_csp_nonce"] = csp_nonce
+
+        if (
+            payment.state == OrderPayment.PAYMENT_STATE_PENDING
+            or payment.state == OrderPayment.PAYMENT_STATE_FAILED
+        ):
+            context = {
+                "checkout_id": checkout_id,
+                "email": payment.order.email,
+                "retry": payment.state == OrderPayment.PAYMENT_STATE_FAILED,
+                "locale": self._get_sumup_locale(request),
+                "csp_nonce": csp_nonce,
             }
-        )
+        elif payment.state == OrderPayment.PAYMENT_STATE_CONFIRMED:
+            # The payment was paid in the meantime, reload the containing page to show the success message
+            context = {"reload": True, "csp_nonce": csp_nonce}
+        else:
+            # Invalid state, nothing to see here
+            return ""
+
+        return get_template("pretix_sumup/payment_widget.html").render(context)
 
     def payment_is_valid_session(self, request: HttpRequest):
         return True
@@ -261,7 +272,8 @@ class SumUp(BasePaymentProvider):
     def api_payment_details(self, payment):
         return {"sumup_transaction": payment.info_data.get("sumup_transaction")}
 
-    def _build_receipt_url(self, transaction, event_id: str = None):
+    @staticmethod
+    def _build_receipt_url(transaction, event_id: str = None):
         merchant_code = transaction.get("merchant_code")
         transaction_code = transaction.get("transaction_code")
         if not merchant_code or not transaction_code:
@@ -324,6 +336,7 @@ class SumUp(BasePaymentProvider):
         try:
             transaction = sumup_client.get_transaction(
                 transaction_id=transaction_id,
+                merchant_code=self.settings.get("merchant_code"),
                 access_token=self.settings.get("access_token"),
             )
             # split into multiple line is required to invoke the setter of info_data
@@ -333,3 +346,12 @@ class SumUp(BasePaymentProvider):
             payment.save()
         except Exception as err:
             logger.warn(f"Error while synchronizing SumUp transaction: {err}")
+
+    @staticmethod
+    def _get_sumup_locale(request):
+        language = get_language_from_request(request)
+        if language == "de" or language == "de-informal":
+            return "de-DE"
+        elif language == "fr":
+            return "fr-FR"
+        return "en-GB"
