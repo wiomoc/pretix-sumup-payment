@@ -1,5 +1,5 @@
-import logging
 import json
+import logging
 from collections import OrderedDict
 from decimal import Decimal
 from django import forms
