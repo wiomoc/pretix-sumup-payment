@@ -41,7 +41,9 @@ def validate_access_token_and_get_merchant_code(access_token):
     if not access_token:
         raise ValidationError(_("No API Key given."))
 
-    response = requests.get(f"{SUMUP_BASE_URL}/v0.1/me", headers=_auth_header(access_token))
+    response = requests.get(
+        f"{SUMUP_BASE_URL}/v0.1/me", headers=_auth_header(access_token)
+    )
 
     if response.status_code == 401:
         raise ValidationError(_("The API Key is invalid."))
@@ -80,7 +82,8 @@ def create_checkout(
 
 def get_checkout(checkout_id, access_token):
     response = requests.get(
-        f"{SUMUP_BASE_URL}/v0.1/checkouts/{checkout_id}", headers=_auth_header(access_token)
+        f"{SUMUP_BASE_URL}/v0.1/checkouts/{checkout_id}",
+        headers=_auth_header(access_token),
     )
     _handle_response_status(response)
 
@@ -90,7 +93,8 @@ def get_checkout(checkout_id, access_token):
 
 def cancel_checkout(checkout_id, access_token):
     response = requests.delete(
-        f"{SUMUP_BASE_URL}/v0.1/checkouts/{checkout_id}", headers=_auth_header(access_token)
+        f"{SUMUP_BASE_URL}/v0.1/checkouts/{checkout_id}",
+        headers=_auth_header(access_token),
     )
     _handle_response_status(response)
 
