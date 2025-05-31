@@ -1,11 +1,22 @@
 {% load i18n %}
 <style nonce="{{ csp_nonce }}">
-    .title {
-        font-family: "Open Sans", "OpenSans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-        font-size: 18px;
-        color: #222222;
-        width: 100%;
-        text-align: center;
+    .sumup-payment-widget-theme {
+        max-width: 100% !important;
+        padding: 0 !important;
+        padding-bottom: 8px !important;
+        min-height: 50px;
+    }
+
+    [data-sumup-id='widget_header__icon'] > img {
+        padding-left: 0 !important;
+    }
+
+    [data-sumup-id='widget_header__title'] {
+        display: none !important;
+    }
+
+    [data-sumup-id='submit_button'] {
+        margin-top: 0 !important;
     }
 
     .loader {
@@ -33,13 +44,13 @@
     url.searchParams.set('paid', 'yes');
     window.location.href = url.href
 </script>
-<div class="title">{% trans "Processing Payment" %}</div>
+<p class="title">{% trans "Processing Payment" %}</p>
 {% else %}
-<div class="title">
-    {% if retry %}
-        {% trans "Last try rejected. Please check your entry and retry afterwards." %}
-    {% endif %}
-</div>
+<p class="title">
+{% if retry %}
+    {% trans "Last try rejected. Please check your entry and retry afterwards." %}
+{% endif %}
+</p>
 <div id="sumup-card"></div>
 </body>
 <script
@@ -63,7 +74,7 @@
                     titleEl.innerHTML = '{% trans "Last try rejected. Please check your entry and retry afterwards." %}';
                 } else if (body.status === "PAID") {
                     document.getElementById("sumup-card").innerHTML =
-                        '<div class="title">{% trans "Payment successful" %}</div><div class="loader"></div>';
+                        '<p class="title"><strong>{% trans "Payment successful" %}</strong></p><div class="loader"></div>';
                     window.location.reload()
                 } else {
                     window.location.reload()

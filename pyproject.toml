@@ -1,7 +1,7 @@
 [project]
 name = "pretix-sumup-payment"
 dynamic = ["version"]
-description = "Enables creditcard payments via Sumup"
+description = "Enables creditcard payments via SumUp"
 readme = "README.rst"
 license = {text = "Apache"}
 keywords = ["pretix"]

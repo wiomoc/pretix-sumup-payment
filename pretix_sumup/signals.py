@@ -31,14 +31,12 @@ def signal_process_response(
         "style-src": [
             f"'nonce-{sumup_csp_nonce}'",
             "*.sumup.com",
-            "'unsafe-inline'",  # workaround as sumup don't pass the nonce to the lazy loaded input fields
         ],
         "frame-src": [
             "*"  # sumup may due to 3DS verification load a site from the bank of the customer
         ],
-        "img-src": ["*.sumup.com"],
-        "connect-src": ["*.sumup.com"],
-        "frame-ancestors": ["'self'"],
+        "img-src": ["*.sumup.com", "data:"],
+        "connect-src": ["*.sumup.com", "cdn.optimizely.com"],
     }
 
     _merge_csp(h, csps)
