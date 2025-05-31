@@ -200,7 +200,7 @@ class SumUp(BasePaymentProvider):
         # Synchronize the transaction to get the refund status
         self._try_synchronize_transaction(payment, transaction["id"])
 
-    def render_receipt_text(self, order: Order, payment: OrderPayment):
+    def render_invoice_text(self, order: Order, payment: OrderPayment):
         transaction = payment.info_data.get("sumup_transaction")
         if not transaction:
             return ""
