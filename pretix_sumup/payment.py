@@ -6,7 +6,7 @@ from django.http import HttpRequest
 from django.template.loader import get_template
 from django.utils.crypto import get_random_string
 from django.utils.translation import gettext_lazy as _
-from pretix.base.forms import SecretKeySettingsField
+from pretix.base.forms import SECRET_REDACTED, SecretKeySettingsField
 from pretix.base.middleware import get_language_from_request
 from pretix.base.models import Order, OrderPayment, OrderRefund
 from pretix.base.payment import BasePaymentProvider, PaymentException
@@ -51,7 +51,9 @@ class SumUp(BasePaymentProvider):
                                 "placeholder": _("Automatically filled in"),
                             }
                         ),
-                        required=False,
+                        # As the field is required but is autofilled later, we need
+                        # some default value that is used internally before we resolve the correct value
+                        empty_value="-",
                         label=_("Merchant Code"),
                     ),
                 ),
@@ -65,13 +67,11 @@ class SumUp(BasePaymentProvider):
     def settings_form_clean(self, cleaned_data: dict):
         cleaned_data = super().settings_form_clean(cleaned_data)
         access_token = cleaned_data.get("payment_sumup_access_token")
-        if access_token is None:
-            # access token was already validated and turned out to be invalid
-            return cleaned_data
-        merchant_code = sumup_client.validate_access_token_and_get_merchant_code(
-            access_token
-        )
-        cleaned_data["payment_sumup_merchant_code"] = merchant_code
+        if access_token is not None and access_token != SECRET_REDACTED:
+            merchant_code = sumup_client.validate_access_token_and_get_merchant_code(
+                access_token
+            )
+            cleaned_data["payment_sumup_merchant_code"] = merchant_code
         return cleaned_data
 
     def is_allowed(self, request: HttpRequest, total: Decimal = None):

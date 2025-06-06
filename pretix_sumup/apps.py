@@ -16,7 +16,7 @@ class PluginApp(PluginConfig):
     class PretixPluginMeta:
         name = "SumUp"
         author = "Christoph Walcher"
-        description = gettext_lazy("Accept creditcard payments via SumUp")
+        description = gettext_lazy("Accept credit card payments via SumUp")
         visible = True
         version = __version__
         category = "PAYMENT"

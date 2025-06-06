@@ -41,9 +41,14 @@ def validate_access_token_and_get_merchant_code(access_token):
     if not access_token:
         raise ValidationError(_("No API Key given."))
 
-    response = requests.get(
-        f"{SUMUP_BASE_URL}/v0.1/me", headers=_auth_header(access_token)
-    )
+    try:
+        response = requests.get(
+            f"{SUMUP_BASE_URL}/v0.1/me",
+            headers=_auth_header(access_token),
+            timeout=4000,
+        )
+    except IOError:
+        raise ValidationError(_("Could not contact SumUp."))
 
     if response.status_code == 401:
         raise ValidationError(_("The API Key is invalid."))

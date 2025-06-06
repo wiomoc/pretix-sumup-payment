@@ -44,7 +44,8 @@
     url.searchParams.set('paid', 'yes');
     window.location.href = url.href
 </script>
-<p class="title">{% trans "Processing Payment" %}</p>
+<p class="title">{% trans "Processing payment" %}</p>
+<div class="loader"></div>
 {% else %}
 <p class="title">
 {% if retry %}
@@ -68,13 +69,12 @@
             console.log(type, body);
             const titleEl = document.querySelector('.title')
             if (type === 'sent') {
-                titleEl.innerHTML = '{% trans "Processing Payment" %}';
+                titleEl.innerHTML = '{% trans "Processing payment" %}';
             } else if (type === 'success') {
                 if (body.status === "FAILED") {
                     titleEl.innerHTML = '{% trans "Last try rejected. Please check your entry and retry afterwards." %}';
                 } else if (body.status === "PAID") {
-                    document.getElementById("sumup-card").innerHTML =
-                        '<p class="title"><strong>{% trans "Payment successful" %}</strong></p><div class="loader"></div>';
+                    document.getElementById("sumup-card").innerHTML = '<div class="loader"></div>';
                     window.location.reload()
                 } else {
                     window.location.reload()

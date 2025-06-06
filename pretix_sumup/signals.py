@@ -5,18 +5,19 @@ from pretix.base.signals import register_payment_providers
 from pretix.presale.signals import process_response
 
 
-@receiver(register_payment_providers, dispatch_uid="payment_sumup")
+@receiver(register_payment_providers, dispatch_uid="sumup_payment")
 def register_payment_provider(sender, **kwargs):
     from .payment import SumUp
 
     return SumUp
 
 
-@receiver(process_response, dispatch_uid="sumup_middleware_resp")
+@receiver(process_response, dispatch_uid="sumup_csp_middleware_resp")
 def signal_process_response(
     sender, request: HttpRequest, response: HttpResponse, **kwargs
 ):
     sumup_csp_nonce = request.__dict__.get("sumup_csp_nonce")
+    # Only append csp policies if this was requested by the provider
     if not sumup_csp_nonce:
         return response
 
