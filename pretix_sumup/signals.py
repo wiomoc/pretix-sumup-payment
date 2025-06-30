@@ -28,16 +28,38 @@ def signal_process_response(
 
     csps = {
         "default-src": ["*.sumup.com"],
-        "script-src": [f"'nonce-{sumup_csp_nonce}'", "*.sumup.com"],
+        "script-src": [
+            f"'nonce-{sumup_csp_nonce}'",
+            "'unsafe-inline'",  # Required by Google Pay
+            "*.sumup.com",
+            "pay.google.com",
+            "apis.google.com",
+            "*.gstatic.com",
+            "*.google.com",
+        ],
         "style-src": [
             f"'nonce-{sumup_csp_nonce}'",
+            "'unsafe-inline'",  # Required by Google Pay
             "*.sumup.com",
+            "pay.google.com",
+            "*.gstatic.com",
         ],
         "frame-src": [
-            "*"  # sumup may due to 3DS verification load a site from the bank of the customer
+            "*",  # sumup may due to 3DS verification load a site from the bank of the customer
         ],
-        "img-src": ["*.sumup.com", "data:"],
-        "connect-src": ["*.sumup.com", "cdn.optimizely.com"],
+        "img-src": [
+            "*.sumup.com",
+            "pay.google.com",
+            "*.gstatic.com",
+            "*.googleusercontent.com",
+            "data:",
+        ],
+        "connect-src": [
+            "*.sumup.com",
+            "pay.google.com",
+            "cdn.optimizely.com",
+            "apis.google.com",
+        ],
     }
 
     _merge_csp(h, csps)

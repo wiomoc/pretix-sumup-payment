@@ -57,6 +57,39 @@ class SumUp(BasePaymentProvider):
                         label=_("Merchant Code"),
                     ),
                 ),
+                (
+                    "google_pay_enabled",
+                    forms.BooleanField(
+                        label=_("Enable Google Pay"),
+                        required=False,
+                        help_text=_(
+                            "Allow customers to pay using Google Pay."
+                        ),
+                    ),
+                ),
+                (
+                    "google_pay_merchant_id",
+                    forms.CharField(
+                        label=_("Google Pay Merchant ID"),
+                        required=False,
+                        help_text=_(
+                            "The Merchant ID for Google Pay. Must be between 12-18 characters long."
+                        ),
+                        min_length=12,
+                        max_length=18,
+                    ),
+                ),
+                (
+                    "google_pay_merchant_name",
+                    forms.CharField(
+                        label=_("Google Pay Merchant Name"),
+                        required=False,
+                        help_text=_(
+                            "The Merchant Name for Google Pay. Will be displayed during Google Pay checkout."
+                        ),
+                        max_length=100,
+                    ),
+                )
             ]
             + list(super().settings_form_fields.items())
         )
@@ -99,6 +132,15 @@ class SumUp(BasePaymentProvider):
                     event,
                     "plugins:pretix_sumup:checkout_event",
                     kwargs={"payment": payment.pk},
+                ),
+                redirect_url=build_absolute_uri(
+                    event,
+                    "plugins:pretix_sumup:return",
+                    kwargs={
+                        "order": order.code,
+                        "payment": payment.pk,
+                        "hash": order.tagged_secret("plugins:pretix_sumup"),
+                    },
                 ),
                 access_token=self.settings.get("access_token"),
             )
@@ -143,6 +185,9 @@ class SumUp(BasePaymentProvider):
                 "retry": payment.state == OrderPayment.PAYMENT_STATE_FAILED,
                 "locale": self._get_sumup_locale(request),
                 "csp_nonce": csp_nonce,
+                "google_pay_merchant_id": self.settings.get("google_pay_merchant_id", ""),
+                "google_pay_merchant_name": self.settings.get("google_pay_merchant_name", ""),
+                "google_pay_enabled": self.settings.get("google_pay_enabled", False),
             }
         elif payment.state == OrderPayment.PAYMENT_STATE_CONFIRMED:
             # The payment was paid in the meantime, reload the containing page to show the success message

@@ -66,17 +66,23 @@ def create_checkout(
     merchant_code,
     return_url,
     access_token,
+    redirect_url=None,
 ):
+    checkout_data = {
+        "checkout_reference": checkout_reference,
+        "description": description,
+        "amount": float(amount),
+        "currency": currency,
+        "merchant_code": merchant_code,
+        "return_url": return_url,
+    }
+    
+    if redirect_url:
+        checkout_data["redirect_url"] = redirect_url
+        
     response = requests.post(
         f"{SUMUP_BASE_URL}/v0.1/checkouts",
-        json={
-            "checkout_reference": checkout_reference,
-            "description": description,
-            "amount": float(amount),
-            "currency": currency,
-            "merchant_code": merchant_code,
-            "return_url": return_url,
-        },
+        json=checkout_data,
         headers=_auth_header(access_token),
     )
     _handle_response_status(response)
