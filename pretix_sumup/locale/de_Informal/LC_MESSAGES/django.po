@@ -2,65 +2,158 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-31 17:10+0200\n"
+"POT-Creation-Date: 2025-07-01 22:28+0000\n"
 "PO-Revision-Date: \n"
-"Last-Translator: Christoph Walcher\n"
+"Last-Translator: Christoph Walcher & Botond Moksony\n"
 "Language-Team: \n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: .\pretix_sumup\apps.py:19
+#: pretix_sumup/apps.py:19
 msgid "Accept credit card payments via SumUp"
 msgstr "Akzeptiere Kreditkartenzahlungen über SumUp"
 
-#: .\pretix_sumup\payment.py:23
+#: pretix_sumup/payment.py:23 pretix_sumup/payment.py:24
 msgid "Credit card via SumUp"
 msgstr "Kreditkarte über SumUp"
 
-#: .\pretix_sumup\payment.py:24
-msgid "Credit card"
-msgstr "Kreditkarte"
-
-#: .\pretix_sumup\payment.py:34
+#: pretix_sumup/payment.py:34
 msgid "API Key"
 msgstr "API Schlüssel"
 
-#: .\pretix_sumup\payment.py:37
+#: pretix_sumup/payment.py:37
 msgid ""
 "API keys are authorization tokens that allow pretix to call SumUp on your "
-"behalf. <a href=\"https://developer.sumup.com/api-keys\" target=\"_blank"
-"\">Click here to manage API Keys in SumUp</a>"
+"behalf. <a href=\"https://developer.sumup.com/api-keys\" "
+"target=\"_blank\">Click here to manage API Keys in SumUp</a>"
 msgstr ""
 "API Schlüssel sind Autorisierungstoken, die es pretix erlauben SumUp in "
 "deinem Namen aufzurufen. <a href=\"https://developer.sumup.com/api-keys\" "
 "target=\"_blank\">Klicke hier um API Schlüssel in SumUp zu verwalten</a>"
 
-#: .\pretix_sumup\payment.py:51
+#: pretix_sumup/payment.py:51 pretix_sumup/payment.py:66
 msgid "Automatically filled in"
 msgstr "Wird automatisch ausgefüllt"
 
-#: .\pretix_sumup\payment.py:57
+#: pretix_sumup/payment.py:57
 msgid "Merchant Code"
 msgstr "Kundennummer"
 
-#: .\pretix_sumup\payment.py:116
+#: pretix_sumup/payment.py:72
+#, fuzzy
+#| msgid "Merchant Code"
+msgid "Merchant Name"
+msgstr "Name des Händlers"
+
+#: pretix_sumup/payment.py:78
+msgid "Enable Alternative Payment Methods"
+msgstr "Alternative Zahlungsmöglichkeiten aktivieren"
+
+#: pretix_sumup/payment.py:81
+msgid ""
+"Allow customers to pay using alternative payment methods like Apple Pay, "
+"Google Pay, iDEAL. <br><i>The supported payment methods depend on the "
+"country of your SumUp account. </i><i><a href=\"https://developer.sumup.com/"
+"online-payments/apm/introduction\" target=\"_blank\">Learn more</a></i> "
+"<br><br><i>In order to enable Apple Pay please follow the steps <a "
+"href=\"https://developer.sumup.com/settings/wallets\" "
+"target=\"_blank\">here</a>.</i><br><i>You should add the Apple Developer "
+"MerchantID Domain Association file to your Pretix Global settings.</i>"
+msgstr ""
+"Ermöglichen Sie Ihren Kunden, mit alternativen Zahlungsmethoden wie Apple "
+"Pay, Google Pay, iDEAL zu bezahlen. <br><i>Die unterstützten "
+"Zahlungsmethoden hängen von dem Land Ihres SumUp-Kontos ab. </i><i><a "
+"href=\"https://developer.sumup.com/online-payments/apm/introduction\" "
+"target=\"_blank\">Learn more</a></i> <br><br><i>Um Apple Pay zu aktivieren, "
+"folgen Sie bitte den Schritten <a href=\"https://developer.sumup.com/"
+"settings/wallets\" target=\"_blank\">hier</a>.</i><br><i>Sie sollten die "
+"Apple Developer MerchantID Domain Association Datei zu Ihren Pretix Global "
+"Einstellungen hinzufügen.</i>"
+
+#: pretix_sumup/payment.py:94
+msgid "Enable Google Pay"
+msgstr "Google Pay aktivieren"
+
+#: pretix_sumup/payment.py:97
+msgid ""
+"<i><strong> You need to enable Alternative Payment Methods to use Google Pay."
+"</strong></i> <br><br>"
+msgstr ""
+"<i><strong> Sie müssen alternative Zahlungsmethoden aktivieren, um Google "
+"Pay verwenden zu können.</strong></i> <br><br>"
+
+#: pretix_sumup/payment.py:104
+#, fuzzy
+#| msgid ""
+#| "Allow customers to pay using Google Pay.<br><br><i>In order to enable "
+#| "Google Pay, first you need to validate your domain with Google. <a "
+#| "href=\"https://developer.sumup.com/online-payments/apm/google-pay\" "
+#| "target=\"_blank\">Learn more</a></i> <br><br><i>To display a test Google "
+#| "Pay button please add the following to the end of your payment URL:</i> "
+#| "<br><code> #sumup-widget:google-pay-demo-mode </code> <br><br><i>Once "
+#| "your domain is verified please reach out to SumUp's Integration Team to "
+#| "activate Google Pay on your merchant account through the <a "
+#| "href=\"https://developer.sumup.com/contact\" target=\"_blank\">SumUp "
+#| "contact form</a>.</i>"
+msgid ""
+"Allow customers to pay using Google Pay.<br><br><i>In order to enable Google "
+"Pay, first you need to validate your domain with Google. <a href=\"https://"
+"developer.sumup.com/online-payments/apm/google-pay\" target=\"_blank\">Learn "
+"more</a></i> <br><br><i>To display a test Google Pay button please add the "
+"following to the end of your payment URL:</i> <br><code> #sumup-widget:"
+"google-pay-demo-mode </code> <br><br><i>Once your domain is verified please "
+"reach out to SumUp's Integration Team to activate Google Pay on your "
+"merchant account through the <a href=\"https://developer.sumup.com/contact\" "
+"target=\"_blank\">SumUp contact form</a>.</i>"
+msgstr ""
+"<br><br><i>Um Google Pay zu aktivieren, müssen Sie zunächst Ihre Domain bei "
+"Google validieren. <a href=\"https://developer.sumup. com/online-payments/"
+"apm/google-pay\" target=\"_blank\">Erfahren Sie mehr</a></i> <br><br><i>Um "
+"eine Test-Schaltfläche für Google Pay anzuzeigen, fügen Sie bitte das "
+"Folgende am Ende Ihrer Zahlungs-URL hinzu:</i> <br><code> #sumup-widget: "
+"google-pay-demo-mode </code> <br><br><i>Wenn Ihre Domain verifiziert ist, "
+"wenden Sie sich bitte an das SumUp Integration Team, um Google Pay auf Ihrem "
+"Händlerkonto über die <a href=\"https://developer. sumup.com/contact\" "
+"target=\"_blank\">SumUp-Kontaktformular</a>.</i>"
+
+#: pretix_sumup/payment.py:125
+msgid "Google Pay Merchant ID"
+msgstr "Google Pay Merchant ID"
+
+#: pretix_sumup/payment.py:128
+msgid "The Merchant ID for Google Pay. Must be between 12-18 characters long."
+msgstr ""
+"Die Merchant ID für Google Pay. Sie muss zwischen 12 und 18 Zeichen lang "
+"sein."
+
+#: pretix_sumup/payment.py:167
+msgid "Google Pay Merchant ID is required when Google Pay is enabled."
+msgstr ""
+"Die Google Pay Merchant ID ist erforderlich, wenn Google Pay aktiviert ist."
+
+#: pretix_sumup/payment.py:172
+msgid "Google Pay Merchant Name is required when Google Pay is enabled."
+msgstr ""
+"Der Google Pay-Händlername ist erforderlich, wenn Google Pay aktiviert ist."
+
+#: pretix_sumup/payment.py:229
 msgid "Error while creating SumUp checkout"
 msgstr "Fehler beim Erstellen des SumUp Checkouts"
 
-#: .\pretix_sumup\payment.py:120
+#: pretix_sumup/payment.py:233
 msgid ""
 "After confirmation you will be redirected to SumUp to complete the payment."
 msgstr ""
 "Nach Bestätigung wirst du zu SumUp weitergeleitet um die Zahlung "
 "abzuschließen."
 
-#: .\pretix_sumup\payment.py:188 .\pretix_sumup\payment.py:200
+#: pretix_sumup/payment.py:312 pretix_sumup/payment.py:324
 msgid "Error while refunding SumUp transaction"
 msgstr "Fehler beim Erstatten der SumUp Transaktion"
 
-#: .\pretix_sumup\payment.py:209
+#: pretix_sumup/payment.py:333
 msgid ""
 "Payed via SumUp\n"
 "{} **** **** **** {}\n"
@@ -70,36 +163,49 @@ msgstr ""
 "{} **** **** **** {}\n"
 "Autorisierungscode: {}"
 
-#: .\pretix_sumup\payment.py:310
+#: pretix_sumup/payment.py:434
 msgid "Error while synchronizing SumUp checkout"
 msgstr "Fehler beim Synchronisieren des SumUp Checkouts"
 
-#: .\pretix_sumup\sumup_client.py:42
+#: pretix_sumup/sumup_client.py:42
 msgid "No API Key given."
 msgstr "Kein API Key angegeben."
 
-#: .\pretix_sumup\sumup_client.py:49
+#: pretix_sumup/sumup_client.py:51
+msgid "Could not contact SumUp."
+msgstr ""
+
+#: pretix_sumup/sumup_client.py:54
 msgid "The API Key is invalid."
 msgstr "Der API Key ist ungültig."
 
-#: .\pretix_sumup\templates\pretix_sumup\control.html:3
+#: pretix_sumup/templates/pretix_sumup/control.html:3
 msgid "SumUp Receipt"
 msgstr "SumUp Beleg"
 
-#: .\pretix_sumup\templates\pretix_sumup\payment_widget.html:47
-#: .\pretix_sumup\templates\pretix_sumup\payment_widget.html:71
+#: pretix_sumup/templates/pretix_sumup/payment_widget.html:11
+#: pretix_sumup/templates/pretix_sumup/payment_widget.html:38
 msgid "Processing payment"
 msgstr "Bearbeite Zahlung"
 
-#: .\pretix_sumup\templates\pretix_sumup\payment_widget.html:51
-#: .\pretix_sumup\templates\pretix_sumup\payment_widget.html:74
+#: pretix_sumup/templates/pretix_sumup/payment_widget.html:16
+#: pretix_sumup/templates/pretix_sumup/payment_widget.html:41
 msgid "Last try rejected. Please check your entry and retry afterwards."
 msgstr ""
 "Der letzte Versuch die Zahlung durchzuführen wurde abgelehnt. Bitte "
 "überprüfe deine Daten und versuche es danach erneut."
 
-#: .\pretix_sumup\templates\pretix_sumup\payment_widget.html:83
+#: pretix_sumup/templates/pretix_sumup/payment_widget.html:49
 msgid "Invalid card data. Please check your entry and retry afterwards."
 msgstr ""
 "Deine Kartendaten sind unzulässig. Bitte überprüfe diese und versuche es "
 "danach erneut."
+
+#: pretix_sumup/views.py:35 pretix_sumup/views.py:60
+msgid ""
+"Sorry, there was an error in the payment process. Please check the link in "
+"your emails to continue."
+msgstr ""
+
+#~ msgid "Credit card"
+#~ msgstr "Kreditkarte"

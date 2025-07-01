@@ -55,7 +55,10 @@ def validate_access_token_and_get_merchant_code(access_token):
 
     _handle_response_status(response)
     response_body = response.json()
-    return response_body["merchant_profile"]["merchant_code"]
+    return (
+        response_body["merchant_profile"]["company_name"],
+        response_body["merchant_profile"]["merchant_code"],
+    )
 
 
 def create_checkout(

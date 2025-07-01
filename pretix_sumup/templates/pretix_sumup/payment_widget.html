@@ -54,10 +54,11 @@
     {% if google_pay_enabled and google_pay_merchant_id %}
     sumupConfig.googlePay = {
         merchantId: '{{ google_pay_merchant_id }}',
-        merchantName: '{{ google_pay_merchant_name }}'
+        merchantName: '{{ merchant_name }}'
     };
     {% endif %}
     
     SumUpCard.mount(sumupConfig);
+    console.log('SumUpCard mounted with config:', sumupConfig);
 </script>
 {% endif %}

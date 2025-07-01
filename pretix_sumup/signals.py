@@ -50,6 +50,7 @@ def signal_process_response(
         ],
         "connect-src": [
             "*.sumup.com",
+            "cdn.optimizely.com",
         ],
     }
 
@@ -82,7 +83,6 @@ def signal_process_response(
         csps["connect-src"].extend(
             [
                 "pay.google.com",
-                "cdn.optimizely.com",
                 "apis.google.com",
             ]
         )

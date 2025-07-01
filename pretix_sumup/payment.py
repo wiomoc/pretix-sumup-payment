@@ -21,7 +21,7 @@ logger = logging.getLogger("pretix.plugins.sumup")
 class SumUp(BasePaymentProvider):
     identifier = "sumup"
     verbose_name = _("Credit card via SumUp")
-    public_name = _("Credit card")
+    public_name = _("Credit card via SumUp")
     abort_pending_allowed = True
 
     @property
@@ -58,11 +58,65 @@ class SumUp(BasePaymentProvider):
                     ),
                 ),
                 (
+                    "merchant_name",
+                    forms.CharField(
+                        widget=forms.TextInput(
+                            attrs={
+                                "readonly": "readonly",
+                                "placeholder": _("Automatically filled in"),
+                            }
+                        ),
+                        # As the field is required but is autofilled later, we need
+                        # some default value that is used internally before we resolve the correct value
+                        empty_value="-",
+                        label=_("Merchant Name"),
+                    ),
+                ),
+                (
+                    "enable_apms",
+                    forms.BooleanField(
+                        label=_("Enable Alternative Payment Methods"),
+                        required=False,
+                        help_text=_(
+                            "Allow customers to pay using alternative payment methods like Apple Pay, Google Pay, iDEAL. <br>"
+                            "<i>The supported payment methods depend on the country of your SumUp account. </i>"
+                            '<i><a href="https://developer.sumup.com/online-payments/apm/introduction" target="_blank">Learn more</a></i> <br>'
+                            "<br>"
+                            "<i>In order to enable Apple Pay please follow the steps "
+                            '<a href="https://developer.sumup.com/settings/wallets" target="_blank">here</a>.</i><br>'
+                            "<i>You should add the Apple Developer MerchantID Domain Association file to your Pretix Global settings.</i>"
+                        ),
+                    ),
+                ),
+                (
                     "google_pay_enabled",
                     forms.BooleanField(
                         label=_("Enable Google Pay"),
                         required=False,
-                        help_text=_("Allow customers to pay using Google Pay."),
+                        help_text=_(
+                            "<i><strong> You need to enable Alternative Payment Methods to use Google Pay.</strong></i> <br><br>"
+                            if not self.settings.get(
+                                "enable_apms", as_type=bool, default=False
+                            )
+                            else ""
+                        )
+                        + _(
+                            "Allow customers to pay using Google Pay.<br>"
+                            "<br>"
+                            '<i>In order to enable Google Pay, first you need to validate your domain with Google.'
+                            ' <a href="https://developer.sumup.com/online-payments/apm/google-pay" target="_blank">Learn more</a></i> <br>'
+                            "<br>"
+                            "<i>To display a test Google Pay button please add the following to the end of your payment URL:</i> <br>"
+                            "<code> #sumup-widget:google-pay-demo-mode </code> <br>"
+                            "<br>"
+                            "<i>Once your domain is verified please reach out to SumUp's Integration Team to activate Google Pay on your merchant"
+                            ' account through the <a href="https://developer.sumup.com/contact" target="_blank">SumUp contact form</a>.</i>'
+                        ),
+                        disabled=not (
+                            self.settings.get(
+                                "enable_apms", as_type=bool, default=False
+                            )
+                        ),
                     ),
                 ),
                 (
@@ -75,17 +129,11 @@ class SumUp(BasePaymentProvider):
                         ),
                         min_length=12,
                         max_length=18,
-                    ),
-                ),
-                (
-                    "google_pay_merchant_name",
-                    forms.CharField(
-                        label=_("Google Pay Merchant Name"),
-                        required=False,
-                        help_text=_(
-                            "The Merchant Name for Google Pay. Will be displayed during Google Pay checkout."
+                        disabled=not (
+                            self.settings.get(
+                                "enable_apms", as_type=bool, default=False
+                            )
                         ),
-                        max_length=100,
                     ),
                 ),
             ]
@@ -99,16 +147,20 @@ class SumUp(BasePaymentProvider):
         cleaned_data = super().settings_form_clean(cleaned_data)
         access_token = cleaned_data.get("payment_sumup_access_token")
         if access_token is not None and access_token != SECRET_REDACTED:
-            merchant_code = sumup_client.validate_access_token_and_get_merchant_code(
-                access_token
+            merchant_name, merchant_code = (
+                sumup_client.validate_access_token_and_get_merchant_code(access_token)
             )
             cleaned_data["payment_sumup_merchant_code"] = merchant_code
+            cleaned_data["payment_sumup_merchant_name"] = merchant_name
 
         # Validate Google Pay settings
-        google_pay_enabled = cleaned_data.get("payment_sumup_google_pay_enabled", False)
+        apms_enabled = cleaned_data.get("payment_sumup_enable_apms", False)
+        google_pay_enabled = (
+            cleaned_data.get("payment_sumup_google_pay_enabled", False) and apms_enabled
+        )
         if google_pay_enabled:
             merchant_id = cleaned_data.get("payment_sumup_google_pay_merchant_id")
-            merchant_name = cleaned_data.get("payment_sumup_google_pay_merchant_name")
+            merchant_name = cleaned_data.get("payment_sumup_merchant_name")
 
             if not merchant_id:
                 raise forms.ValidationError(
@@ -138,18 +190,23 @@ class SumUp(BasePaymentProvider):
         if has_valid_checkout:
             return
         try:
-            checkout_id = sumup_client.create_checkout(
-                checkout_reference=f"{event.slug}/{order.code}/{payment_id}",
-                amount=payment.amount,
-                currency=event.currency,
-                description=f"{event.name} #{order.code}",
-                merchant_code=self.settings.get("merchant_code"),
-                return_url=build_absolute_uri(
+            checkout_params = {
+                "checkout_reference": f"{event.slug}/{order.code}/{payment_id}",
+                "amount": payment.amount,
+                "currency": event.currency,
+                "description": f"{event.name} #{order.code}",
+                "merchant_code": self.settings.get("merchant_code"),
+                "return_url": build_absolute_uri(
                     event,
                     "plugins:pretix_sumup:checkout_event",
                     kwargs={"payment": payment.pk},
                 ),
-                redirect_url=build_absolute_uri(
+                "access_token": self.settings.get("access_token"),
+            }
+
+            # Only include redirect_url if enable_apms is True
+            if self.settings.get("enable_apms", as_type=bool, default=False):
+                checkout_params["redirect_url"] = build_absolute_uri(
                     event,
                     "plugins:pretix_sumup:return",
                     kwargs={
@@ -157,9 +214,9 @@ class SumUp(BasePaymentProvider):
                         "payment": payment.pk,
                         "hash": order.tagged_secret("plugins:pretix_sumup"),
                     },
-                ),
-                access_token=self.settings.get("access_token"),
-            )
+                )
+
+            checkout_id = sumup_client.create_checkout(**checkout_params)
 
             info_data = payment.info_data
             info_data["sumup_checkout_id"] = checkout_id
@@ -210,9 +267,7 @@ class SumUp(BasePaymentProvider):
                 "google_pay_merchant_id": self.settings.get(
                     "google_pay_merchant_id", ""
                 ),
-                "google_pay_merchant_name": self.settings.get(
-                    "google_pay_merchant_name", ""
-                ),
+                "merchant_name": self.settings.get("merchant_name", ""),
                 "google_pay_enabled": google_pay_enabled,
             }
         elif payment.state == OrderPayment.PAYMENT_STATE_CONFIRMED:
