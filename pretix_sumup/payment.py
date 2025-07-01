@@ -62,9 +62,7 @@ class SumUp(BasePaymentProvider):
                     forms.BooleanField(
                         label=_("Enable Google Pay"),
                         required=False,
-                        help_text=_(
-                            "Allow customers to pay using Google Pay."
-                        ),
+                        help_text=_("Allow customers to pay using Google Pay."),
                     ),
                 ),
                 (
@@ -89,7 +87,7 @@ class SumUp(BasePaymentProvider):
                         ),
                         max_length=100,
                     ),
-                )
+                ),
             ]
             + list(super().settings_form_fields.items())
         )
@@ -105,6 +103,24 @@ class SumUp(BasePaymentProvider):
                 access_token
             )
             cleaned_data["payment_sumup_merchant_code"] = merchant_code
+
+        # Validate Google Pay settings
+        google_pay_enabled = cleaned_data.get("payment_sumup_google_pay_enabled", False)
+        if google_pay_enabled:
+            merchant_id = cleaned_data.get("payment_sumup_google_pay_merchant_id")
+            merchant_name = cleaned_data.get("payment_sumup_google_pay_merchant_name")
+
+            if not merchant_id:
+                raise forms.ValidationError(
+                    _("Google Pay Merchant ID is required when Google Pay is enabled.")
+                )
+            if not merchant_name:
+                raise forms.ValidationError(
+                    _(
+                        "Google Pay Merchant Name is required when Google Pay is enabled."
+                    )
+                )
+
         return cleaned_data
 
     def is_allowed(self, request: HttpRequest, total: Decimal = None):
@@ -175,6 +191,12 @@ class SumUp(BasePaymentProvider):
         # XXX: smuggle csp nonce in http request to our csp middleware signal handler
         request.__dict__["sumup_csp_nonce"] = csp_nonce
 
+        # Check if Google Pay is explicitly enabled for this request
+        google_pay_enabled = self.settings.get(
+            "google_pay_enabled", as_type=bool, default=False
+        )
+        request.__dict__["sumup_google_pay_enabled"] = google_pay_enabled
+
         if (
             payment.state == OrderPayment.PAYMENT_STATE_PENDING
             or payment.state == OrderPayment.PAYMENT_STATE_FAILED
@@ -185,9 +207,13 @@ class SumUp(BasePaymentProvider):
                 "retry": payment.state == OrderPayment.PAYMENT_STATE_FAILED,
                 "locale": self._get_sumup_locale(request),
                 "csp_nonce": csp_nonce,
-                "google_pay_merchant_id": self.settings.get("google_pay_merchant_id", ""),
-                "google_pay_merchant_name": self.settings.get("google_pay_merchant_name", ""),
-                "google_pay_enabled": self.settings.get("google_pay_enabled", False),
+                "google_pay_merchant_id": self.settings.get(
+                    "google_pay_merchant_id", ""
+                ),
+                "google_pay_merchant_name": self.settings.get(
+                    "google_pay_merchant_name", ""
+                ),
+                "google_pay_enabled": google_pay_enabled,
             }
         elif payment.state == OrderPayment.PAYMENT_STATE_CONFIRMED:
             # The payment was paid in the meantime, reload the containing page to show the success message

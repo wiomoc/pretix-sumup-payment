@@ -21,46 +21,71 @@ def signal_process_response(
     if not sumup_csp_nonce:
         return response
 
+    # Check if Google Pay is explicitly enabled for this request
+    # The value should be directly set to True or False in payment.py
+    google_pay_enabled = bool(request.__dict__.get("sumup_google_pay_enabled", False))
+
     if "Content-Security-Policy" in response:
         h = _parse_csp(response["Content-Security-Policy"])
     else:
         h = {}
 
+    # Basic SumUp CSP rules
     csps = {
         "default-src": ["*.sumup.com"],
         "script-src": [
             f"'nonce-{sumup_csp_nonce}'",
-            "'unsafe-inline'",  # Required by Google Pay
             "*.sumup.com",
-            "pay.google.com",
-            "apis.google.com",
-            "*.gstatic.com",
-            "*.google.com",
         ],
         "style-src": [
             f"'nonce-{sumup_csp_nonce}'",
-            "'unsafe-inline'",  # Required by Google Pay
             "*.sumup.com",
-            "pay.google.com",
-            "*.gstatic.com",
         ],
         "frame-src": [
             "*",  # sumup may due to 3DS verification load a site from the bank of the customer
         ],
         "img-src": [
             "*.sumup.com",
-            "pay.google.com",
-            "*.gstatic.com",
-            "*.googleusercontent.com",
             "data:",
         ],
         "connect-src": [
             "*.sumup.com",
-            "pay.google.com",
-            "cdn.optimizely.com",
-            "apis.google.com",
         ],
     }
+
+    # Add Google Pay specific CSP rules only if Google Pay is explicitly enabled
+    if google_pay_enabled:
+        # Add Google Pay domains and unsafe-inline to existing rules
+        csps["script-src"].extend(
+            [
+                "'unsafe-inline'",  # Required by Google Pay
+                "pay.google.com",
+                "apis.google.com",
+                "*.gstatic.com",
+                "*.google.com",
+            ]
+        )
+        csps["style-src"].extend(
+            [
+                "'unsafe-inline'",  # Required by Google Pay
+                "pay.google.com",
+                "*.gstatic.com",
+            ]
+        )
+        csps["img-src"].extend(
+            [
+                "pay.google.com",
+                "*.gstatic.com",
+                "*.googleusercontent.com",
+            ]
+        )
+        csps["connect-src"].extend(
+            [
+                "pay.google.com",
+                "cdn.optimizely.com",
+                "apis.google.com",
+            ]
+        )
 
     _merge_csp(h, csps)
 

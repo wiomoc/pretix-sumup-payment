@@ -1,13 +1,13 @@
+from django.contrib import messages
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.views.generic import View
-from django.contrib import messages
-from django.utils.translation import gettext_lazy as _
 from pretix.base.models import Order, OrderPayment
-from pretix.multidomain.urlreverse import eventreverse
 from pretix.helpers.http import redirect_to_url
+from pretix.multidomain.urlreverse import eventreverse
 
 from pretix_sumup.payment import SumUp
 
@@ -60,9 +60,7 @@ class ReturnView(View):
                     "Sorry, there was an error in the payment process. Please check the link in your emails to continue."
                 ),
             )
-            return redirect_to_url(
-                eventreverse(request.event, "presale:event.index")
-            )
+            return redirect_to_url(eventreverse(request.event, "presale:event.index"))
 
 
 @csrf_exempt

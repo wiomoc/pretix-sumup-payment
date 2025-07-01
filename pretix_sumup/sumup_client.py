@@ -76,10 +76,10 @@ def create_checkout(
         "merchant_code": merchant_code,
         "return_url": return_url,
     }
-    
+
     if redirect_url:
         checkout_data["redirect_url"] = redirect_url
-        
+
     response = requests.post(
         f"{SUMUP_BASE_URL}/v0.1/checkouts",
         json=checkout_data,

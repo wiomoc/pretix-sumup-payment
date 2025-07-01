@@ -1,6 +1,6 @@
-from django.urls import include, re_path
+from django.urls import re_path
 
-from pretix_sumup.views import checkout_event, ReturnView
+from pretix_sumup.views import ReturnView, checkout_event
 
 event_patterns = [
     re_path(
