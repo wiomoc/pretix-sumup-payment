@@ -43,7 +43,7 @@ License
 -------
 
 
-Copyright 2024 Christoph Walcher
+Copyright 2025 Christoph Walcher & Botond Moksony
 
 Released under the terms of the Apache License 2.0
 
