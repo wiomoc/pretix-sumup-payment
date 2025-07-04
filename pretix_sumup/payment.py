@@ -331,9 +331,10 @@ class SumUp(BasePaymentProvider):
         if not transaction:
             return ""
         return _("Payed via SumUp\n{} **** **** **** {}\nAuth code: {}").format(
-            transaction["card"]["type"],
-            transaction["card"]["last_4_digits"],
-            transaction["auth_code"],
+            transaction.get("card", {}).get("type", "UNKNOWN"),
+            transaction.get("payment_type", ""),
+            transaction.get("card", {}).get("last_4_digits", ""),
+            transaction.get("auth_code", ""),
         )
 
     def payment_presale_render(self, payment: OrderPayment):
@@ -343,20 +344,23 @@ class SumUp(BasePaymentProvider):
 
         return get_template("pretix_sumup/control.html").render(
             {
-                "card_type": transaction["card"]["type"],
-                "card_last_4_digit": transaction["card"]["last_4_digits"],
+                "card_type": transaction.get("card", {}).get("type", "UNKNOWN"),
+                "payment_type": transaction.get("entry_mode", "").upper(),
+                "card_last_4_digit": transaction.get("card", {}).get("last_4_digits", ""),
             }
         )
 
     def payment_control_render(self, order: Order, payment: OrderPayment):
         transaction = payment.info_data.get("sumup_transaction")
+        print(transaction)
         if not transaction:
             return ""
 
         return get_template("pretix_sumup/control.html").render(
             {
-                "card_type": transaction["card"]["type"],
-                "card_last_4_digit": transaction["card"]["last_4_digits"],
+                "card_type": transaction.get("card", {}).get("type", "UNKNOWN"),
+                "payment_type": transaction.get("entry_mode", "").upper(),
+                "card_last_4_digit": transaction.get("card", {}).get("last_4_digits", ""),
                 "receipt_url": self._build_receipt_url(transaction),
             }
         )
@@ -381,8 +385,9 @@ class SumUp(BasePaymentProvider):
 
         return get_template("pretix_sumup/control.html").render(
             {
-                "card_type": transaction["card"]["type"],
-                "card_last_4_digit": transaction["card"]["last_4_digits"],
+                "card_type": transaction.get("card", {}).get("type", "UNKNOWN"),
+                "payment_type": transaction.get("entry_mode", "").upper(),
+                "card_last_4_digit": transaction.get("card", {}).get("last_4_digits", ""),
                 "receipt_url": self._build_receipt_url(
                     transaction, event_id=refund_event_id
                 ),

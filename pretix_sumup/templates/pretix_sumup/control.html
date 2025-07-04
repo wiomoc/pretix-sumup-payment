@@ -2,4 +2,4 @@
 {% if receipt_url %}
 <a href="{{ receipt_url }}" target="blank">{% trans "SumUp Receipt" %}</a> -
 {% endif %}
-<span>{% if card_type != 'UNKNOWN' %}{{card_type}} {% endif %}&bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; {{card_last_4_digit}}</span>
+<span>{% if card_type != 'UNKNOWN' %}{{card_type}} - {% endif %} {% if payment_type %} {{payment_type}} {% endif %} {% if card_last_4_digit %} &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; {{card_last_4_digit}} {% endif %}</span>
