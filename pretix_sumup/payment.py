@@ -82,9 +82,15 @@ class SumUp(BasePaymentProvider):
                             "<i>The supported payment methods depend on the country of your SumUp account. </i>"
                             '<i><a href="https://developer.sumup.com/online-payments/apm/introduction" target="_blank">Learn more</a></i> <br>'
                             "<br>"
-                            "<i>In order to enable Apple Pay please follow the steps "
-                            '<a href="https://developer.sumup.com/settings/wallets" target="_blank">here</a>.</i><br>'
-                            "<i>You should add the Apple Developer MerchantID Domain Association file to your Pretix Global settings.</i>"
+                            "<i>In order to enable Apple Pay:</i><br>"
+                            "<i>1. Download the Domain verification file from "
+                            '<a href="https://developer.sumup.com/settings/wallets/apple-pay?tab=web" target="_blank">SumUp Wallets Settings</a> '
+                            "and open it with a text editor</i><br>"
+                            '<i>2. Copy and paste the whole file as text to the "ApplePay MerchantID Domain Association" field under '
+                            'Pretix\'s "Global settings" (only accessible as an Admin user via "Admin mode")</i><br>'
+                            "<i>3. Verify your domain by pasting it to "
+                            '<a href="https://developer.sumup.com/settings/wallets" target="_blank">SumUp Wallets Settings</a> '
+                            'and clicking "Check domain" (like "example.com" or "world.example.com")</i><br>'
                         ),
                     ),
                 ),
@@ -96,14 +102,21 @@ class SumUp(BasePaymentProvider):
                         help_text=_(
                             "Allow customers to pay using Google Pay.<br>"
                             "<br>"
-                            "<i>In order to enable Google Pay, first you need to validate your domain with Google."
-                            ' <a href="https://developer.sumup.com/online-payments/apm/google-pay" target="_blank">Learn more</a></i> <br>'
+                            "<i>Follow these steps to enable Google Pay:</i><br>"
+                            "<i>1. Register a Google Pay business account at "
+                            '<a href="https://pay.google.com/business/console/" target="_blank">Google Pay for Business</a></i><br>'
+                            '<i>2. Fill out your information under the "Business profile" tab and get it approved by Google</i><br>'
+                            "<i>3. Enable Google Pay here and fill in your Google Merchant ID (found next to your business name on the Google Pay console)</i><br>"
+                            '<i>4. In Google Pay console\'s "Google Pay API" tab, fill in your domain and choose "Gateway" as Integration type</i><br>'
+                            "<i>5. Take screenshots of your Pretix store and submit them to Google. For test screens, add:</i><br>"
+                            "<code> #sumup-widget:google-pay-demo-mode </code><br>"
+                            "<i>to the end of your payment URL</i><br>"
+                            "<i>6. After Google approves your implementation (usually within 48h), contact SumUp's Integration Team to activate Google Pay"
+                            ' through the <a href="https://developer.sumup.com/contact" target="_blank">SumUp contact form</a>, providing your '
+                            "SumUp Merchant Code, Email, and a test ticket shop URL</i><br>"
                             "<br>"
-                            "<i>To display a test Google Pay button please add the following to the end of your payment URL:</i> <br>"
-                            "<code> #sumup-widget:google-pay-demo-mode </code> <br>"
-                            "<br>"
-                            "<i>Once your domain is verified please reach out to SumUp's Integration Team to activate Google Pay on your merchant"
-                            ' account through the <a href="https://developer.sumup.com/contact" target="_blank">SumUp contact form</a>.</i>'
+                            "<i>For more detailed instructions and example screenshots, please visit the "
+                            '<a href="https://github.com/wiomoc/pretix-sumup-payment" target="_blank">project\'s GitHub repository</a>.</i>'
                         ),
                         widget=forms.CheckboxInput(
                             attrs={
