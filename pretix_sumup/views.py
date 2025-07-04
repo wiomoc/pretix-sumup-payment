@@ -53,7 +53,7 @@ class ReturnView(View):
                 + ("?paid=yes" if order.status == Order.STATUS_PAID else "")
             )
 
-        except Exception as e:
+        except Exception:
             messages.error(
                 request,
                 _(

@@ -61,12 +61,22 @@
         src="https://gateway.sumup.com/gateway/ecom/card/v2/sdk.js"
 ></script>
 <script type="text/javascript" nonce="{{ csp_nonce }}">
-    var sumupConfig = {
+    const sumupConfig = {
         id: 'sumup-card',
         locale: '{{ locale }}',
         checkoutId: '{{ checkout_id }}',
         nonce: '{{ csp_nonce }}',
         email: '{{ email }}',
+
+        {% if enable_google_pay and google_pay_merchant_id %}
+
+        googlePay : {
+            merchantId: '{{ google_pay_merchant_id }}',
+            merchantName: '{{ merchant_name }}'
+        },
+
+        {% endif %}
+
         onResponse: function (type, body) {
             console.log(type, body);
             const titleEl = document.querySelector('.title')
@@ -86,13 +96,6 @@
             }
         }
     };
-    
-    {% if google_pay_enabled and google_pay_merchant_id %}
-    sumupConfig.googlePay = {
-        merchantId: '{{ google_pay_merchant_id }}',
-        merchantName: '{{ merchant_name }}'
-    };
-    {% endif %}
     
     SumUpCard.mount(sumupConfig);
 </script>

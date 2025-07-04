@@ -23,7 +23,7 @@ def signal_process_response(
 
     # Check if Google Pay is explicitly enabled for this request
     # The value should be directly set to True or False in payment.py
-    google_pay_enabled = bool(request.__dict__.get("sumup_google_pay_enabled", False))
+    enable_google_pay = bool(request.__dict__.get("sumup_enable_google_pay", False))
 
     if "Content-Security-Policy" in response:
         h = _parse_csp(response["Content-Security-Policy"])
@@ -55,7 +55,7 @@ def signal_process_response(
     }
 
     # Add Google Pay specific CSP rules only if Google Pay is explicitly enabled
-    if google_pay_enabled:
+    if enable_google_pay:
         # Add Google Pay domains and unsafe-inline to existing rules
         csps["script-src"].extend(
             [

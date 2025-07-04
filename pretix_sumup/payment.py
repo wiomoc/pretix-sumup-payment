@@ -89,21 +89,14 @@ class SumUp(BasePaymentProvider):
                     ),
                 ),
                 (
-                    "google_pay_enabled",
+                    "enable_google_pay",
                     forms.BooleanField(
                         label=_("Enable Google Pay"),
                         required=False,
                         help_text=_(
-                            "<i><strong> You need to enable Alternative Payment Methods to use Google Pay.</strong></i> <br><br>"
-                            if not self.settings.get(
-                                "enable_apms", as_type=bool, default=False
-                            )
-                            else ""
-                        )
-                        + _(
                             "Allow customers to pay using Google Pay.<br>"
                             "<br>"
-                            '<i>In order to enable Google Pay, first you need to validate your domain with Google.'
+                            "<i>In order to enable Google Pay, first you need to validate your domain with Google."
                             ' <a href="https://developer.sumup.com/online-payments/apm/google-pay" target="_blank">Learn more</a></i> <br>'
                             "<br>"
                             "<i>To display a test Google Pay button please add the following to the end of your payment URL:</i> <br>"
@@ -112,10 +105,10 @@ class SumUp(BasePaymentProvider):
                             "<i>Once your domain is verified please reach out to SumUp's Integration Team to activate Google Pay on your merchant"
                             ' account through the <a href="https://developer.sumup.com/contact" target="_blank">SumUp contact form</a>.</i>'
                         ),
-                        disabled=not (
-                            self.settings.get(
-                                "enable_apms", as_type=bool, default=False
-                            )
+                        widget=forms.CheckboxInput(
+                            attrs={
+                                "data-checkbox-dependency": "#id_payment_sumup_enable_apms",
+                            }
                         ),
                     ),
                 ),
@@ -129,10 +122,11 @@ class SumUp(BasePaymentProvider):
                         ),
                         min_length=12,
                         max_length=18,
-                        disabled=not (
-                            self.settings.get(
-                                "enable_apms", as_type=bool, default=False
-                            )
+                        disabled=False,
+                        widget=forms.TextInput(
+                            attrs={
+                                "data-checkbox-dependency": "#id_payment_sumup_enable_apms"
+                            }
                         ),
                     ),
                 ),
@@ -145,33 +139,54 @@ class SumUp(BasePaymentProvider):
 
     def settings_form_clean(self, cleaned_data: dict):
         cleaned_data = super().settings_form_clean(cleaned_data)
+        errors = {}
+
         access_token = cleaned_data.get("payment_sumup_access_token")
         if access_token is not None and access_token != SECRET_REDACTED:
-            merchant_name, merchant_code = (
-                sumup_client.validate_access_token_and_get_merchant_code(access_token)
-            )
-            cleaned_data["payment_sumup_merchant_code"] = merchant_code
-            cleaned_data["payment_sumup_merchant_name"] = merchant_name
+            try:
+                merchant_name, merchant_code = (
+                    sumup_client.validate_access_token_and_get_merchant_code(
+                        access_token
+                    )
+                )
+                cleaned_data["payment_sumup_merchant_code"] = merchant_code
+                cleaned_data["payment_sumup_merchant_name"] = merchant_name
+            except Exception as e:
+                errors["payment_sumup_access_token"] = _("Invalid API key: {}").format(
+                    str(e)
+                )
 
         # Validate Google Pay settings
         apms_enabled = cleaned_data.get("payment_sumup_enable_apms", False)
-        google_pay_enabled = (
-            cleaned_data.get("payment_sumup_google_pay_enabled", False) and apms_enabled
+        enable_google_pay = (
+            cleaned_data.get("payment_sumup_enable_google_pay", False) and apms_enabled
         )
-        if google_pay_enabled:
+
+        # Technically this shouldn't be necessary as the form should not allow enabling Google Pay without APMs, but just in case
+        if (
+            cleaned_data.get("payment_sumup_enable_google_pay", False)
+            and not apms_enabled
+        ):
+            errors["payment_sumup_enable_google_pay"] = _(
+                "Google Pay requires Alternative Payment Methods to be enabled first."
+            )
+
+        if enable_google_pay:
             merchant_id = cleaned_data.get("payment_sumup_google_pay_merchant_id")
             merchant_name = cleaned_data.get("payment_sumup_merchant_name")
 
             if not merchant_id:
-                raise forms.ValidationError(
-                    _("Google Pay Merchant ID is required when Google Pay is enabled.")
+                errors["payment_sumup_google_pay_merchant_id"] = _(
+                    "Google Pay Merchant ID is required when Google Pay is enabled."
                 )
+
             if not merchant_name:
-                raise forms.ValidationError(
-                    _(
-                        "Google Pay Merchant Name is required when Google Pay is enabled."
-                    )
+                errors["payment_sumup_merchant_name"] = _(
+                    "Merchant Name is required when Google Pay is enabled. Please input your API key again in order to retrieve your Merchant Name."
                 )
+
+        if errors:
+            raise forms.ValidationError(errors)
 
         return cleaned_data
 
@@ -249,10 +264,10 @@ class SumUp(BasePaymentProvider):
         request.__dict__["sumup_csp_nonce"] = csp_nonce
 
         # Check if Google Pay is explicitly enabled for this request
-        google_pay_enabled = self.settings.get(
-            "google_pay_enabled", as_type=bool, default=False
+        enable_google_pay = self.settings.get(
+            "enable_google_pay", as_type=bool, default=False
         )
-        request.__dict__["sumup_google_pay_enabled"] = google_pay_enabled
+        request.__dict__["sumup_enable_google_pay"] = enable_google_pay
 
         if (
             payment.state == OrderPayment.PAYMENT_STATE_PENDING
@@ -268,7 +283,7 @@ class SumUp(BasePaymentProvider):
                     "google_pay_merchant_id", ""
                 ),
                 "merchant_name": self.settings.get("merchant_name", ""),
-                "google_pay_enabled": google_pay_enabled,
+                "enable_google_pay": enable_google_pay,
             }
         elif payment.state == OrderPayment.PAYMENT_STATE_CONFIRMED:
             # The payment was paid in the meantime, reload the containing page to show the success message
@@ -346,7 +361,9 @@ class SumUp(BasePaymentProvider):
             {
                 "card_type": transaction.get("card", {}).get("type", "UNKNOWN"),
                 "payment_type": transaction.get("entry_mode", "").upper(),
-                "card_last_4_digit": transaction.get("card", {}).get("last_4_digits", ""),
+                "card_last_4_digit": transaction.get("card", {}).get(
+                    "last_4_digits", ""
+                ),
             }
         )
 
@@ -360,7 +377,9 @@ class SumUp(BasePaymentProvider):
             {
                 "card_type": transaction.get("card", {}).get("type", "UNKNOWN"),
                 "payment_type": transaction.get("entry_mode", "").upper(),
-                "card_last_4_digit": transaction.get("card", {}).get("last_4_digits", ""),
+                "card_last_4_digit": transaction.get("card", {}).get(
+                    "last_4_digits", ""
+                ),
                 "receipt_url": self._build_receipt_url(transaction),
             }
         )
@@ -387,7 +406,9 @@ class SumUp(BasePaymentProvider):
             {
                 "card_type": transaction.get("card", {}).get("type", "UNKNOWN"),
                 "payment_type": transaction.get("entry_mode", "").upper(),
-                "card_last_4_digit": transaction.get("card", {}).get("last_4_digits", ""),
+                "card_last_4_digit": transaction.get("card", {}).get(
+                    "last_4_digits", ""
+                ),
                 "receipt_url": self._build_receipt_url(
                     transaction, event_id=refund_event_id
                 ),
