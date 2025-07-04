@@ -1,6 +1,10 @@
 Pretix SumUp Payment
 ====================
 
+.. image:: /images/SumUp_Pretix_plugin_header.png
+   :align: center
+
+
 This is a plugin for `Pretix`_.
 
 Enables credit card payments, Apple Pay, Google Pay, and alternative payment methods via SumUp.
@@ -38,7 +42,7 @@ Alternative Payment Methods
    * Apple Pay
    * Google Pay
    * iDEAL
-   * Other methods depending on your `SumUp account's country <https://developer.sumup.com/online-payments/apm/introduction#supported-alternative-payment-methods>`
+   * Other methods depending on your `SumUp account's country <https://developer.sumup.com/online-payments/apm/introduction#supported-alternative-payment-methods>`_
 
 2. **Apple Pay Setup**:
 
@@ -50,19 +54,21 @@ Alternative Payment Methods
 3. **Google Pay Setup**:
 
    * For the Google Pay checkout you'll need to register a Google Pay business account and validate your domain with Google by sending screenshots of your checkout to verify that it satisfies Google's guidelines. Additionally, you'll need to contact SumUp's Integration Team to activate Google Pay on your merchant account.
-   * First, register a Google Pay business account `here <https://pay.google.com/business/console/>`
+   * First, register a Google Pay business account `here <https://pay.google.com/business/console/>`_
    * Fill out your information under the ``Business profile`` tab and get it approved by Google
    * ``Enable Google Pay`` under the plugin's settings and fill in your Google ``Merchant ID`` (you can find it next to your business name on the Google Pay console)
    * Under the ``Google Pay API`` tab fill in your domain (like ``example.com`` or ``world.example.com``) and choose ``Gateway`` as ``Integration type``
-   * Take screenshots of your **own** Pretix store (see the examples below) and submit them to Google. For the ``Payment method screen`` and ``GooglePay API Payment Screen`` add ``#sumup-widget:google-pay-demo-mode`` to your URL to generate a test Google Pay button. (e.g.: ``yourdomain.net/yourorganizer/yourevent/order/GDBBK/9ddqfjdkaujvhus45q/#sumup-widget:google-pay-demo-mode``)
+   * Take screenshots of your **own** Pretix store (see the examples under `images </images/>`_) and submit them to Google. For the ``Payment method screen`` and ``GooglePay API Payment Screen`` add ``#sumup-widget:google-pay-demo-mode`` to your URL to generate a test Google Pay button. (e.g.: ``yourdomain.net/yourorganizer/yourevent/order/GDBBK/9ddqfjdkaujvhus45q/#sumup-widget:google-pay-demo-mode``)
    * Wait until Google Approves your implementation (usually within 48h)
    * Contact SumUp's Integration Team to activate Google Pay on your merchant account via the `contact form <https://developer.sumup.com/contact>`_.  
      You'll need to provide them with your SumUp Merchant Code, SumUp Merchant Email, and a URL to a test ticket shop in order to check if your store complies with their policies.
    * You're done! Google Pay should show as an option from now on for every new checkout! :DD
 
+
 4. **Other Alternative Payment Methods**
 
-   * After enabling ``Alternative Payment Methods`` under the plugin's settings they should show up as an option depending on your `SumUp account's country <https://developer.sumup.com/online-payments/apm/introduction#supported-alternative-payment-methods>`
+   * After enabling ``Alternative Payment Methods`` under the plugin's settings they should show up as an option depending on your `SumUp account's country <https://developer.sumup.com/online-payments/apm/introduction#supported-alternative-payment-methods>`_
+
 
 Development setup
 -----------------
@@ -98,6 +104,7 @@ To automatically check for these issues before you commit, you can run ``.instal
 
 License
 -------
+
 
 Copyright 2025 Christoph Walcher & Botond Moksony
 
