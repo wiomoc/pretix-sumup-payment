@@ -47,9 +47,9 @@ Alternative Payment Methods
 2. **Apple Pay Setup**:
 
    * Download the Domain verification file from `SumUp Wallets Settings <https://developer.sumup.com/settings/wallets/apple-pay?tab=web>`_ and open it with a text editor
-   * Copy and paste the whole file as text to the ``ApplePay MerchantID Domain Association`` field under Pretix's ``Global settings`` (``yourdomain/control/global/settings/`` - only accessible as an Admin user via ``Admin mode`` )
-   * Verify your domain by pasting it to `SumUp Wallets Settings <https://developer.sumup.com/settings/wallets>`_ and clicking ``Check domain`` (like ``example.com`` or ``world.example.com``)
-   * You're done! Apple Pay should show as an option from now on for every new checkout! :DD
+   * Copy and paste the whole file as text to the ``ApplePay MerchantID Domain Association`` field under Pretix's ``Global settings`` (``yourdomain/control/global/settings/`` - only accessible as an Admin user via ``Admin mode``)
+   * Verify your domain by pasting it to `SumUp Wallets Settings`_ and clicking ``Check domain`` (like ``example.com`` or ``world.example.com``)
+   * You're done! Apple Pay should show as an option from now on for every new checkout, when visited by an supported device like an iPhone!
 
 3. **Google Pay Setup**:
 
@@ -62,12 +62,12 @@ Alternative Payment Methods
    * Wait until Google Approves your implementation (usually within 48h)
    * Contact SumUp's Integration Team to activate Google Pay on your merchant account via the `contact form <https://developer.sumup.com/contact>`_.  
      You'll need to provide them with your SumUp Merchant Code, SumUp Merchant Email, and a URL to a test ticket shop in order to check if your store complies with their policies.
-   * You're done! Google Pay should show as an option from now on for every new checkout! :DD
+   * You're done! Google Pay should show as an option from now on for every new checkout!
 
 
 4. **Other Alternative Payment Methods**
 
-   * After enabling ``Alternative Payment Methods`` under the plugin's settings they should show up as an option depending on your `SumUp account's country <https://developer.sumup.com/online-payments/apm/introduction#supported-alternative-payment-methods>`_
+   * After enabling ``Alternative Payment Methods`` under the plugin's settings they should show up as an option depending on your `SumUp account's country`_
 
 
 Development setup
