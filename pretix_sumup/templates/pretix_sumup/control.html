@@ -1,5 +1,5 @@
 {% load i18n %}
+<span>{% if payment_type %} {{payment_type}} {% endif %} {% if entry_mode %} {{entry_mode}} {% endif %} {% if card_last_4_digit %} &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; {{card_last_4_digit}} {% endif %}</span>
 {% if receipt_url %}
-<a href="{{ receipt_url }}" target="blank">{% trans "SumUp Receipt" %}</a> -
+    - <a href="{{ receipt_url }}" target="blank">{% trans "SumUp Receipt" %}</a>
 {% endif %}
-<span>{% if card_type != 'UNKNOWN' %}{{card_type}} - {% endif %} {% if payment_type %} {{payment_type}} {% endif %} {% if card_last_4_digit %} &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; {{card_last_4_digit}} {% endif %}</span>

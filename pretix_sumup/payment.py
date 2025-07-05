@@ -21,7 +21,7 @@ logger = logging.getLogger("pretix.plugins.sumup")
 class SumUp(BasePaymentProvider):
     identifier = "sumup"
     verbose_name = _("Credit card via SumUp")
-    public_name = _("Credit card via SumUp")
+    public_name = _("Credit card")
     abort_pending_allowed = True
 
     @property
@@ -106,10 +106,11 @@ class SumUp(BasePaymentProvider):
                             "<i>1. Register a Google Pay business account at "
                             '<a href="https://pay.google.com/business/console/" target="_blank">Google Pay for Business</a></i><br>'
                             '<i>2. Fill out your information under the "Business profile" tab and get it approved by Google</i><br>'
-                            "<i>3. Enable Google Pay here and fill in your Google Merchant ID (found next to your business name on the Google Pay console)</i><br>"
+                            "<i>3. Enable Google Pay here and fill in your Google Merchant ID "
+                            "(found next to your business name on the Google Pay console)</i><br>"
                             '<i>4. In Google Pay console\'s "Google Pay API" tab, fill in your domain and choose "Gateway" as Integration type</i><br>'
-                            "<i>5. Take screenshots of your Pretix store and submit them to Google. For test screens, add:</i><br>"
-                            "<code> #sumup-widget:google-pay-demo-mode </code><br>"
+                            "<i>5. Take screenshots of your Pretix store and submit them to Google. For test screens, add:</i>"
+                            " <code>#sumup-widget:google-pay-demo-mode</code> "
                             "<i>to the end of your payment URL</i><br>"
                             "<i>6. After Google approves your implementation (usually within 48h), contact SumUp's Integration Team to activate Google Pay"
                             ' through the <a href="https://developer.sumup.com/contact" target="_blank">SumUp contact form</a>, providing your '
@@ -138,7 +139,7 @@ class SumUp(BasePaymentProvider):
                         disabled=False,
                         widget=forms.TextInput(
                             attrs={
-                                "data-checkbox-dependency": "#id_payment_sumup_enable_apms"
+                                "data-checkbox-dependency": "#id_payment_sumup_enable_google_pay"
                             }
                         ),
                     ),
@@ -157,10 +158,11 @@ class SumUp(BasePaymentProvider):
         access_token = cleaned_data.get("payment_sumup_access_token")
         if access_token is not None and access_token != SECRET_REDACTED:
             try:
-                merchant_name, merchant_code = (
-                    sumup_client.validate_access_token_and_get_merchant_code(
-                        access_token
-                    )
+                (
+                    merchant_name,
+                    merchant_code,
+                ) = sumup_client.validate_access_token_and_get_merchant_code(
+                    access_token
                 )
                 cleaned_data["payment_sumup_merchant_code"] = merchant_code
                 cleaned_data["payment_sumup_merchant_name"] = merchant_name
@@ -193,7 +195,7 @@ class SumUp(BasePaymentProvider):
                     "Google Pay Merchant ID is required when Google Pay is enabled."
                 )
 
-            if not merchant_name:
+            if not merchant_name or merchant_name == "-":
                 errors["payment_sumup_merchant_name"] = _(
                     "Merchant Name is required when Google Pay is enabled. Please input your API key again in order to retrieve your Merchant Name."
                 )
@@ -273,13 +275,14 @@ class SumUp(BasePaymentProvider):
         self._synchronize_payment_status(payment)
 
         csp_nonce = get_random_string(10)
-        # XXX: smuggle csp nonce in http request to our csp middleware signal handler
+        # XXX: smuggle in http request to our csp middleware signal handler
         request.__dict__["sumup_csp_nonce"] = csp_nonce
 
         # Check if Google Pay is explicitly enabled for this request
         enable_google_pay = self.settings.get(
             "enable_google_pay", as_type=bool, default=False
         )
+        # XXX: smuggle  in http request to our csp middleware signal handler
         request.__dict__["sumup_enable_google_pay"] = enable_google_pay
 
         if (
@@ -292,11 +295,9 @@ class SumUp(BasePaymentProvider):
                 "retry": payment.state == OrderPayment.PAYMENT_STATE_FAILED,
                 "locale": self._get_sumup_locale(request),
                 "csp_nonce": csp_nonce,
-                "google_pay_merchant_id": self.settings.get(
-                    "google_pay_merchant_id", ""
-                ),
-                "merchant_name": self.settings.get("merchant_name", ""),
                 "enable_google_pay": enable_google_pay,
+                "google_pay_merchant_id": self.settings.get("google_pay_merchant_id"),
+                "merchant_name": self.settings.get("merchant_name"),
             }
         elif payment.state == OrderPayment.PAYMENT_STATE_CONFIRMED:
             # The payment was paid in the meantime, reload the containing page to show the success message
@@ -358,43 +359,57 @@ class SumUp(BasePaymentProvider):
         transaction = payment.info_data.get("sumup_transaction")
         if not transaction:
             return ""
-        return _("Payed via SumUp\n{} **** **** **** {}\nAuth code: {}").format(
-            transaction.get("card", {}).get("type", "UNKNOWN"),
-            transaction.get("payment_type", ""),
-            transaction.get("card", {}).get("last_4_digits", ""),
+
+        card = transaction.get("card")
+        if card:
+            payment_info = card.get("type", transaction.get("simple_payment_type", ""))
+            entry_mode = transaction.get("entry_mode")
+            if entry_mode and entry_mode != "customer entry":
+                payment_info += f" {entry_mode.title()}"
+            last_4_digits = card.get("last_4_digits")
+            if last_4_digits:
+                payment_info += f" **** **** **** {last_4_digits}"
+        else:
+            payment_info = transaction.get("simple_payment_type", "")
+
+        return _("Payed via SumUp\n{}\nAuth code: {}").format(
+            payment_info,
             transaction.get("auth_code", ""),
         )
+
+    @staticmethod
+    def _render_transaction_control(transaction: dict, receipt_url: str | None = None):
+        payment_info = {
+            "receipt_url": receipt_url,
+        }
+        card = transaction.get("card")
+        if card:
+            payment_info["payment_type"] = card.get(
+                "type", transaction.get("simple_payment_type", "")
+            )
+            entry_mode = transaction.get("entry_mode")
+            if entry_mode and entry_mode != "customer entry":
+                payment_info["entry_mode"] = entry_mode.title()
+            payment_info["card_last_4_digit"] = card.get("last_4_digits")
+        else:
+            payment_info["payment_type"] = transaction.get("simple_payment_type", "")
+
+        return get_template("pretix_sumup/control.html").render(payment_info)
 
     def payment_presale_render(self, payment: OrderPayment):
         transaction = payment.info_data.get("sumup_transaction")
         if not transaction:
             return ""
 
-        return get_template("pretix_sumup/control.html").render(
-            {
-                "card_type": transaction.get("card", {}).get("type", "UNKNOWN"),
-                "payment_type": transaction.get("entry_mode", "").upper(),
-                "card_last_4_digit": transaction.get("card", {}).get(
-                    "last_4_digits", ""
-                ),
-            }
-        )
+        return self._render_transaction_control(transaction)
 
     def payment_control_render(self, order: Order, payment: OrderPayment):
         transaction = payment.info_data.get("sumup_transaction")
-        print(transaction)
         if not transaction:
             return ""
 
-        return get_template("pretix_sumup/control.html").render(
-            {
-                "card_type": transaction.get("card", {}).get("type", "UNKNOWN"),
-                "payment_type": transaction.get("entry_mode", "").upper(),
-                "card_last_4_digit": transaction.get("card", {}).get(
-                    "last_4_digits", ""
-                ),
-                "receipt_url": self._build_receipt_url(transaction),
-            }
+        return self._render_transaction_control(
+            transaction, self._build_receipt_url(transaction)
         )
 
     def refund_control_render(self, request: HttpRequest, refund: OrderRefund):
@@ -415,17 +430,8 @@ class SumUp(BasePaymentProvider):
         if not refund_event_id:
             return ""
 
-        return get_template("pretix_sumup/control.html").render(
-            {
-                "card_type": transaction.get("card", {}).get("type", "UNKNOWN"),
-                "payment_type": transaction.get("entry_mode", "").upper(),
-                "card_last_4_digit": transaction.get("card", {}).get(
-                    "last_4_digits", ""
-                ),
-                "receipt_url": self._build_receipt_url(
-                    transaction, event_id=refund_event_id
-                ),
-            }
+        return self._render_transaction_control(
+            transaction, self._build_receipt_url(transaction, event_id=refund_event_id)
         )
 
     def matching_id(self, payment):
@@ -438,7 +444,7 @@ class SumUp(BasePaymentProvider):
         return {"sumup_transaction": payment.info_data.get("sumup_transaction")}
 
     @staticmethod
-    def _build_receipt_url(transaction, event_id: str = None):
+    def _build_receipt_url(transaction, event_id: str | None = None):
         merchant_code = transaction.get("merchant_code")
         transaction_code = transaction.get("transaction_code")
         if not merchant_code or not transaction_code:
